@@ -10,7 +10,6 @@ class ProcessManager extends EventEmitter {
     this._processes = { tx: null, rx: null };
     this._status = { tx: 'idle', rx: 'idle' };
     this._params = { tx: null, rx: null };
-    this._rxSourceWatcher = null;
     this._pendingSources = null;
   }
 
@@ -22,28 +21,28 @@ class ProcessManager extends EventEmitter {
     return { ...this._status };
   }
 
+  // Format gain value as the binary expects: "+0dB", "-10dB", "+6dB"
+  _formatGain(gain) {
+    const n = Number(gain) || 0;
+    return `${n >= 0 ? '+' : ''}${n}dB`;
+  }
+
   // Build CLI args from leg params
+  // TX: -input "device" -input_name "HOSTNAME . Comms TX" -input_gain +0dB
+  // RX: -output "device" -output_name "REMOTE . Comms TX" -output_gain +0dB
   _buildArgs(leg, params) {
-    const hostname = os.hostname().toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
     const args = [];
 
     if (leg === 'tx') {
-      args.push('--tx');
-      // Stream name: "HOSTNAME . Comms TX"
+      if (params.device) args.push('-input', params.device);
+      const hostname = os.hostname().toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
       const streamName = params.streamName || `${hostname} . Comms TX`;
-      args.push('-s', streamName);
+      args.push('-input_name', streamName);
+      if (typeof params.gain === 'number') args.push('-input_gain', this._formatGain(params.gain));
     } else {
-      args.push('--rx');
-      // Source to subscribe to
-      const source = params.source || '';
-      args.push('-s', source);
-    }
-
-    if (params.device) args.push('-d', params.device);
-    if (typeof params.gain === 'number') args.push('-g', String(params.gain));
-    if (params.latency) args.push('-b', String(params.latency));
-    if (params.networkInterface && params.networkInterface !== 'auto') {
-      args.push('-i', params.networkInterface);
+      if (params.device) args.push('-output', params.device);
+      if (params.source) args.push('-output_name', params.source);
+      if (typeof params.gain === 'number') args.push('-output_gain', this._formatGain(params.gain));
     }
 
     return args;
@@ -51,7 +50,8 @@ class ProcessManager extends EventEmitter {
 
   buildCommandPreview(leg, params) {
     const args = this._buildArgs(leg, params || {});
-    return `${this._binaryPath} ${args.map(a => a.includes(' ') ? `"${a}"` : a).join(' ')}`;
+    const bin = `"${this._binaryPath}"`;
+    return `${bin} ${args.map(a => a.startsWith('-') ? a : `"${a}"`).join(' ')}`;
   }
 
   startLeg(leg, params) {
@@ -61,7 +61,7 @@ class ProcessManager extends EventEmitter {
     // For RX: if source not yet available, hold in waiting state
     if (leg === 'rx' && params.waitForSource && params.source) {
       const available = this._pendingSources &&
-        this._pendingSources.some(s => s.name === params.source || s.name.includes(params.source));
+        this._pendingSources.some(s => s.name === params.source);
       if (!available) {
         this._setStatus(leg, 'waiting');
         this._emitLog(leg, `Waiting for NDI source: ${params.source}`);
@@ -89,11 +89,10 @@ class ProcessManager extends EventEmitter {
 
     this._processes[leg] = proc;
     this._setStatus(leg, 'running');
-    this._emitLog(leg, `Started: ${this._binaryPath} ${args.map(a => a.includes(' ') ? `"${a}"` : a).join(' ')}`);
+    this._emitLog(leg, `Started: ${this.buildCommandPreview(leg, params)}`);
 
     proc.stdout.on('data', (data) => {
-      const lines = data.toString().split('\n');
-      for (const line of lines) {
+      for (const line of data.toString().split('\n')) {
         const trimmed = line.trim();
         if (!trimmed) continue;
         this._emitLog(leg, trimmed);
@@ -102,8 +101,7 @@ class ProcessManager extends EventEmitter {
     });
 
     proc.stderr.on('data', (data) => {
-      const lines = data.toString().split('\n');
-      for (const line of lines) {
+      for (const line of data.toString().split('\n')) {
         const trimmed = line.trim();
         if (!trimmed) continue;
         this._emitLog(leg, trimmed, 'error');
@@ -112,15 +110,23 @@ class ProcessManager extends EventEmitter {
 
     proc.on('close', (code, signal) => {
       this._processes[leg] = null;
-      if (signal === 'SIGTERM' || code === null) {
+      if (signal === 'SIGTERM' || signal === 'SIGKILL') {
         this._setStatus(leg, 'stopped');
-        this._emitLog(leg, `Process stopped (signal: ${signal || 'none'})`);
-      } else if (code !== 0) {
+      } else if (code === 0) {
+        // Exited cleanly but unexpectedly — likely showed help (wrong args)
+        this._setStatus(leg, 'error');
+        this._emitLog(leg, `Process exited immediately (code 0) — check device name and binary path`, 'error');
+      } else if (code !== null) {
         this._setStatus(leg, 'error');
         this._emitLog(leg, `Process exited with code ${code}`, 'error');
       } else {
-        this._setStatus(leg, 'idle');
-        this._emitLog(leg, 'Process exited cleanly');
+        this._setStatus(leg, 'stopped');
+      }
+
+      // Auto-reconnect RX if it was running and we want to persist
+      if (leg === 'rx' && this._params.rx?.autoReconnect && this._status.rx !== 'stopped') {
+        this._setStatus('rx', 'waiting');
+        this._emitLog('rx', 'Connection lost — waiting to reconnect...');
       }
     });
 
@@ -136,20 +142,17 @@ class ProcessManager extends EventEmitter {
   stopLeg(leg) {
     const proc = this._processes[leg];
     if (proc) {
-      try {
-        proc.kill('SIGTERM');
-        // Force-kill after 3s if still alive
-        setTimeout(() => {
-          if (this._processes[leg] === proc) {
-            try { proc.kill('SIGKILL'); } catch {}
-          }
-        }, 3000);
-      } catch {}
+      try { proc.kill('SIGTERM'); } catch {}
+      setTimeout(() => {
+        if (this._processes[leg] === proc) {
+          try { proc.kill('SIGKILL'); } catch {}
+        }
+      }, 3000);
       this._processes[leg] = null;
     }
-    if (this._status[leg] !== 'idle') {
-      this._setStatus(leg, 'idle');
-    }
+    this._setStatus(leg, 'idle');
+    // Clear autoReconnect so it doesn't try to come back
+    if (this._params[leg]) this._params[leg].autoReconnect = false;
   }
 
   startBoth(txParams, rxParams) {
@@ -162,28 +165,20 @@ class ProcessManager extends EventEmitter {
     this.stopLeg('rx');
   }
 
-  // Called by main index when NDI sources update — auto-connect waiting RX
   onSourcesUpdate(sources) {
     this._pendingSources = sources;
-    if (this._status.rx === 'waiting' && this._params.rx) {
-      const source = this._params.rx.source;
-      const found = sources.some(s => s.name === source || s.name.includes(source));
+    if (this._status.rx === 'waiting' && this._params.rx?.source) {
+      const found = sources.some(s => s.name === this._params.rx.source);
       if (found) {
-        this._emitLog('rx', `Source found: ${source} — connecting...`);
+        this._emitLog('rx', `Source found: ${this._params.rx.source} — connecting...`);
         this._spawn('rx', this._params.rx);
       }
     }
   }
 
-  // Auto-reconnect if source drops (for RX in running state)
-  onProcessClosed(leg) {
-    if (leg === 'rx' && this._params.rx && this._params.rx.autoReconnect) {
-      this._setStatus('rx', 'waiting');
-      this._emitLog('rx', 'Connection lost — waiting to reconnect...');
-    }
-  }
-
   cleanup() {
+    if (this._params.tx) this._params.tx.autoReconnect = false;
+    if (this._params.rx) this._params.rx.autoReconnect = false;
     this.stopAll();
   }
 
@@ -192,29 +187,22 @@ class ProcessManager extends EventEmitter {
     this.emit('status', { leg, status });
   }
 
-  _emitLog(leg, message, level) {
-    this.emit('log', { leg, message, level: level || 'info', timestamp: Date.now() });
+  _emitLog(leg, message, level = 'info') {
+    this.emit('log', { leg, message, level, timestamp: Date.now() });
   }
 
   _parseVu(leg, line) {
-    // Try various patterns ndi-free-audio might use for VU output
-    // Pattern 1: "L: -12.3 dB  R: -9.8 dB"
-    let m = line.match(/L[:\s]+(-?\d+(?:\.\d+)?)\s*dB.*R[:\s]+(-?\d+(?:\.\d+)?)\s*dB/i);
-    if (m) {
-      this.emit('vu', { leg, left: parseFloat(m[1]), right: parseFloat(m[2]) });
-      return;
-    }
-    // Pattern 2: "VU: -12.3 -9.8"
-    m = line.match(/VU[:\s]+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/i);
-    if (m) {
-      this.emit('vu', { leg, left: parseFloat(m[1]), right: parseFloat(m[2]) });
-      return;
-    }
-    // Pattern 3: "[TX] L=-12.3 R=-9.8"
-    m = line.match(/L=(-?\d+(?:\.\d+)?)\s+R=(-?\d+(?:\.\d+)?)/i);
-    if (m) {
-      this.emit('vu', { leg, left: parseFloat(m[1]), right: parseFloat(m[2]) });
-    }
+    // NDI FreeAudio outputs levels like: "Level: -12.3 dB / -9.8 dB"
+    let m = line.match(/Level[:\s]+(-?\d+(?:\.\d+)?)\s*dB\s*\/\s*(-?\d+(?:\.\d+)?)\s*dB/i);
+    if (m) { this.emit('vu', { leg, left: parseFloat(m[1]), right: parseFloat(m[2]) }); return; }
+
+    // "L: -12.3 dB  R: -9.8 dB"
+    m = line.match(/L[:\s]+(-?\d+(?:\.\d+)?)\s*dB.*R[:\s]+(-?\d+(?:\.\d+)?)\s*dB/i);
+    if (m) { this.emit('vu', { leg, left: parseFloat(m[1]), right: parseFloat(m[2]) }); return; }
+
+    // "-12.3 / -9.8" or "-12.3 -9.8" (two floats)
+    m = line.match(/^(-?\d+(?:\.\d+)?)\s*[\/,]\s*(-?\d+(?:\.\d+)?)$/);
+    if (m) { this.emit('vu', { leg, left: parseFloat(m[1]), right: parseFloat(m[2]) }); }
   }
 }
 

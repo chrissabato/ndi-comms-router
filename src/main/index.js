@@ -81,10 +81,12 @@ ipcMain.handle('system:getHostname', () => os.hostname());
 
 ipcMain.handle('audio:getDevices', () => {
   const config = configManager.getConfig();
-  return audioDevices.getAudioDevices(config.machineRole);
+  return audioDevices.getAudioDevices(config.machineRole, config.binaryPath);
 });
 
 ipcMain.handle('ndi:getSources', () => ndiScanner.getSources());
+ipcMain.handle('ndi:addManual', (_, name) => { ndiScanner.addManualSource(name); return ndiScanner.getSources(); });
+ipcMain.handle('ndi:removeManual', (_, name) => { ndiScanner.removeManualSource(name); return ndiScanner.getSources(); });
 
 ipcMain.handle('process:start', (_, leg, params) => processManager.startLeg(leg, params));
 
@@ -131,8 +133,11 @@ processManager.on('vu', (data) => {
 
 ndiScanner.on('sources', (sources) => {
   if (mainWindow) mainWindow.webContents.send('ndi:sources', sources);
-  // Notify process manager so waiting RX legs can auto-connect
   processManager.onSourcesUpdate(sources);
+});
+
+ndiScanner.on('log', (data) => {
+  if (mainWindow) mainWindow.webContents.send('log', data);
 });
 
 // ── App lifecycle ─────────────────────────────────────────────────────────

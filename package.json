@@ -41,10 +41,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
-  "optionalDependencies": {
-    "naudiodon": "^2.0.4"
-  },
-  "devDependencies": {
+"devDependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",
     "@babel/preset-react": "^7.22.0",

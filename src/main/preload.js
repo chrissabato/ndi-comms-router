@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // NDI sources
   getNdiSources: () => ipcRenderer.invoke('ndi:getSources'),
+  addManualSource: (name) => ipcRenderer.invoke('ndi:addManual', name),
+  removeManualSource: (name) => ipcRenderer.invoke('ndi:removeManual', name),
 
   // Process control
   startLeg: (leg, params) => ipcRenderer.invoke('process:start', leg, params),
