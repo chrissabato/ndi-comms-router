@@ -6,6 +6,11 @@ on:
     tags: ['v*.*.*']
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build and release (e.g. v1.0.2)'
+        required: false
 
 jobs:
   build:
@@ -20,6 +25,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Cache electron-builder binaries
+        uses: actions/cache@v4
+        with:
+          path: C:\Users\runneradmin\AppData\Local\electron-builder\Cache
+          key: electron-builder-cache-${{ hashFiles('package-lock.json') }}
+          restore-keys: electron-builder-cache-
 
       - name: Install dependencies
         run: npm ci
