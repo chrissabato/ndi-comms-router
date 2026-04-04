@@ -1,11 +1,36 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const os = require('os');
+const { autoUpdater } = require('electron-updater');
 
 const configManager = require('./configManager');
 const audioDevices = require('./audioDevices');
 const ndiScanner = require('./ndiScanner');
 const processManager = require('./processManager');
+
+// ── Auto-updater ──────────────────────────────────────────────────────────────
+
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+function sendUpdateStatus(status, data = {}) {
+  if (mainWindow) mainWindow.webContents.send('updater:status', { status, ...data });
+}
+
+autoUpdater.on('checking-for-update', () => sendUpdateStatus('checking'));
+autoUpdater.on('update-not-available', () => sendUpdateStatus('up-to-date'));
+autoUpdater.on('update-available', (info) =>
+  sendUpdateStatus('available', { version: info.version })
+);
+autoUpdater.on('download-progress', (p) =>
+  sendUpdateStatus('downloading', { percent: Math.round(p.percent) })
+);
+autoUpdater.on('update-downloaded', (info) =>
+  sendUpdateStatus('ready', { version: info.version })
+);
+autoUpdater.on('error', (err) =>
+  sendUpdateStatus('error', { message: err.message })
+);
 
 let mainWindow = null;
 
@@ -84,6 +109,10 @@ ipcMain.handle('process:buildCommandPreview', (_, leg, params) =>
   processManager.buildCommandPreview(leg, params)
 );
 
+ipcMain.handle('updater:installNow', () => {
+  autoUpdater.quitAndInstall();
+});
+
 // ── Wire process manager events to renderer ───────────────────────────────
 
 processManager.on('log', (data) => {
@@ -119,6 +148,11 @@ app.whenReady().then(() => {
 
   ndiScanner.start();
   createWindow();
+
+  // Check for updates a few seconds after launch (only in packaged app)
+  if (app.isPackaged) {
+    setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

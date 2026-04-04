@@ -34,4 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onNdiSources: (cb) => on('ndi:sources', cb),
   onProcessStatus: (cb) => on('process:status', cb),
   onVuLevels: (cb) => on('vu:levels', cb),
+
+  // Auto-updater
+  onUpdaterStatus: (cb) => on('updater:status', cb),
+  installUpdate: () => ipcRenderer.invoke('updater:installNow'),
 });

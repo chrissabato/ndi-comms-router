@@ -17,6 +17,7 @@ export default function App() {
   const [logs, setLogs] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [linkLatency, setLinkLatency] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState(null); // null | { status, version?, percent?, message? }
 
   const logsRef = useRef([]);
 
@@ -61,11 +62,19 @@ export default function App() {
       setVuLevels(prev => ({ ...prev, [leg]: { left, right } }));
     });
 
+    const unsubUpdater = api.onUpdaterStatus((data) => {
+      // Only surface states the user needs to act on or be aware of
+      if (['available', 'downloading', 'ready', 'error'].includes(data.status)) {
+        setUpdateStatus(data);
+      }
+    });
+
     return () => {
       unsubLog();
       unsubSources();
       unsubStatus();
       unsubVu();
+      unsubUpdater();
     };
   }, []);
 
@@ -123,6 +132,9 @@ export default function App() {
           <button style={styles.titlebarBtn} onClick={() => setShowSettings(true)}>&#9881;</button>
         </div>
       </div>
+
+      {/* Update notification banner */}
+      {updateStatus && <UpdateBanner status={updateStatus} onDismiss={() => setUpdateStatus(null)} />}
 
       {/* Signal flow diagram */}
       <SignalFlow
@@ -202,6 +214,55 @@ export default function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+    </div>
+  );
+}
+
+function UpdateBanner({ status, onDismiss }) {
+  const messages = {
+    available: `Update v${status.version} available — downloading...`,
+    downloading: `Downloading update... ${status.percent ?? 0}%`,
+    ready: `Update v${status.version} ready — will install on next quit`,
+    error: `Update check failed: ${status.message}`,
+  };
+
+  const isReady = status.status === 'ready';
+  const isError = status.status === 'error';
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '5px 16px',
+      background: isError ? 'rgba(232,64,64,0.12)' : 'rgba(61,186,111,0.12)',
+      borderBottom: `1px solid ${isError ? '#E84040' : '#3DBA6F'}40`,
+      flexShrink: 0,
+    }}>
+      <span style={{ fontSize: 11, color: isError ? '#E84040' : '#3DBA6F', flex: 1 }}>
+        {messages[status.status]}
+      </span>
+      {isReady && (
+        <button
+          onClick={() => api.installUpdate()}
+          style={{
+            background: '#3DBA6F', border: 'none', color: '#000',
+            fontSize: 11, fontWeight: 700, padding: '3px 12px',
+            borderRadius: 3, cursor: 'pointer',
+          }}
+        >
+          Restart &amp; Install
+        </button>
+      )}
+      <button
+        onClick={onDismiss}
+        style={{
+          background: 'none', border: 'none', color: '#555',
+          fontSize: 14, cursor: 'pointer', padding: '0 4px',
+        }}
+      >
+        ✕
+      </button>
     </div>
   );
 }

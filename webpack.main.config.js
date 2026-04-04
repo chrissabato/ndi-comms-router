@@ -24,6 +24,7 @@ module.exports = {
     // Native modules must not be bundled
     naudiodon: 'commonjs naudiodon',
     electron: 'commonjs electron',
+    'electron-updater': 'commonjs electron-updater',
   },
   node: {
     __dirname: false,
