@@ -8,7 +8,7 @@ export default function ChannelGrid({ channelPairs, selected, onChange, accent }
   }
 
   return (
-    <div style={styles.grid}>
+    <div style={styles.wrapper}>
       {channelPairs.map((pair) => {
         const isSelected = selected === pair.deviceString;
         return (
@@ -33,26 +33,23 @@ export default function ChannelGrid({ channelPairs, selected, onChange, accent }
 }
 
 const styles = {
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 3,
+  wrapper: {
     overflowY: 'auto',
-    maxHeight: 220,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 3,
   },
   cell: {
     fontFamily: "'DM Mono', monospace",
     fontSize: 11,
-    padding: '6px 10px',
+    padding: '7px 10px',
     borderRadius: 3,
     border: '1px solid',
     cursor: 'pointer',
     textAlign: 'left',
-    lineHeight: 1.3,
+    lineHeight: 1.5,
     transition: 'all 0.1s',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    flexShrink: 0,
   },
   empty: {
     color: 'var(--text-dim)',

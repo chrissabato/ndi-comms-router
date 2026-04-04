@@ -115,6 +115,10 @@ ipcMain.handle('updater:installNow', () => {
   autoUpdater.quitAndInstall();
 });
 
+ipcMain.handle('window:minimize', () => mainWindow?.minimize());
+ipcMain.handle('window:maximize', () => mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize());
+ipcMain.handle('window:close', () => mainWindow?.close());
+
 ipcMain.handle('updater:checkNow', () => {
   if (app.isPackaged) {
     autoUpdater.checkForUpdates();

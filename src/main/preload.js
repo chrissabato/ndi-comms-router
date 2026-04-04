@@ -41,4 +41,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdaterStatus: (cb) => on('updater:status', cb),
   installUpdate: () => ipcRenderer.invoke('updater:installNow'),
   checkForUpdates: () => ipcRenderer.invoke('updater:checkNow'),
+
+  // Window controls
+  windowMinimize: () => ipcRenderer.invoke('window:minimize'),
+  windowMaximize: () => ipcRenderer.invoke('window:maximize'),
+  windowClose: () => ipcRenderer.invoke('window:close'),
 });

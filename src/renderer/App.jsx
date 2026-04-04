@@ -119,7 +119,10 @@ export default function App() {
         <span style={styles.titlebarRole}>{config.machineRole === 'xr18' ? 'XR18 PC' : 'DANTE PC'}</span>
         <span style={styles.titlebarHost} className="mono">{hostname}</span>
         <div style={styles.titlebarActions}>
-          <button style={styles.titlebarBtn} onClick={() => setShowSettings(true)}>&#9881;</button>
+          <button style={styles.titlebarBtn} onClick={() => setShowSettings(true)} title="Settings">&#9881;</button>
+          <button style={styles.titlebarBtn} onClick={() => api.windowMinimize()} title="Minimize">&#8211;</button>
+          <button style={styles.titlebarBtn} onClick={() => api.windowMaximize()} title="Maximize">&#9633;</button>
+          <button style={{ ...styles.titlebarBtn, ...styles.titlebarClose }} onClick={() => api.windowClose()} title="Close">&#10005;</button>
         </div>
       </div>
 
@@ -317,10 +320,16 @@ const styles = {
     border: 'none',
     color: 'var(--text-secondary)',
     cursor: 'pointer',
-    fontSize: 16,
-    padding: '2px 6px',
-    borderRadius: 4,
+    fontSize: 14,
+    padding: '4px 10px',
+    borderRadius: 0,
     WebkitAppRegion: 'no-drag',
+    lineHeight: 1,
+  },
+  titlebarClose: {
+    fontSize: 12,
+    color: '#888',
+    marginRight: -12,
   },
   masterControls: {
     display: 'flex',
