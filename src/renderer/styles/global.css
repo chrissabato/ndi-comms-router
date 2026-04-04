@@ -1,0 +1,88 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-base: #0D0D0D;
+  --bg-panel: #161616;
+  --bg-card: #1E1E1E;
+  --bg-input: #262626;
+  --border: #2A2A2A;
+  --border-light: #333333;
+  --text-primary: #E8E8E8;
+  --text-secondary: #888888;
+  --text-dim: #555555;
+  --tx: #E8A020;
+  --tx-dim: #7A4A00;
+  --rx: #20B8E8;
+  --rx-dim: #005A7A;
+  --success: #3DBA6F;
+  --error: #E84040;
+  --warning: #E8A020;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Drag region for frameless window */
+.titlebar {
+  -webkit-app-region: drag;
+}
+.titlebar button,
+.titlebar input,
+.titlebar select {
+  -webkit-app-region: no-drag;
+}
+
+/* Utilities */
+.mono {
+  font-family: 'DM Mono', monospace;
+}
+.text-tx { color: var(--tx); }
+.text-rx { color: var(--rx); }
+.text-success { color: var(--success); }
+.text-error { color: var(--error); }
+.text-dim { color: var(--text-dim); }
+
+/* Pulse animation for scanning state */
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-amber {
+  animation: pulse-amber 1.4s ease-in-out infinite;
+  color: var(--tx);
+}

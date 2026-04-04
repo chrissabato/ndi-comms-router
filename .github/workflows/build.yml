@@ -1,0 +1,76 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Package (Windows installer)
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ndi-comms-router-windows
+          path: release/*.exe
+          if-no-files-found: warn
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ndi-comms-router-windows
+          path: release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: NDI Comms Router ${{ github.ref_name }}
+          body: |
+            ## NDI Comms Router ${{ github.ref_name }}
+
+            ### Installation
+            1. Download and run the `.exe` installer below
+            2. Install [ndi-free-audio](https://github.com/ykhwong/ndi-free-audio) separately on both machines
+            3. Launch the app and configure the path to `ndi-free-audio.exe` in Settings
+
+            ### What's included
+            - Windows NSIS installer (64-bit)
+            - Both XR18 PC and Dante PC modes in one install
+          files: release/*.exe
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
