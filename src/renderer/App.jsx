@@ -16,7 +16,6 @@ export default function App() {
   const [vuLevels, setVuLevels] = useState({ tx: { left: -60, right: -60 }, rx: { left: -60, right: -60 } });
   const [logs, setLogs] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
-  const [linkLatency, setLinkLatency] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(null); // null | { status, version?, percent?, message? }
 
   const logsRef = useRef([]);
@@ -101,15 +100,6 @@ export default function App() {
     await api.stopAll();
   }, []);
 
-  const handleLatencyChange = useCallback(async (leg, value) => {
-    const update = { [leg]: { latency: value } };
-    if (linkLatency) {
-      update.tx = { latency: value };
-      update.rx = { latency: value };
-    }
-    await updateConfig(update);
-  }, [linkLatency, updateConfig]);
-
   if (!config) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#555' }}>Initialising...</div>;
   }
@@ -158,15 +148,6 @@ export default function App() {
             ■  STOP ALL
           </button>
         )}
-        <label style={styles.linkLatency}>
-          <input
-            type="checkbox"
-            checked={linkLatency}
-            onChange={e => setLinkLatency(e.target.checked)}
-            style={{ marginRight: 6 }}
-          />
-          Link latency
-        </label>
       </div>
 
       {/* Main content */}
@@ -181,7 +162,6 @@ export default function App() {
             status={processStatus.tx}
             vuLevels={vuLevels.tx}
             onConfigChange={updateConfig}
-            onLatencyChange={(v) => handleLatencyChange('tx', v)}
           />
           <div style={styles.legDivider} />
           <LegPanel
@@ -193,7 +173,6 @@ export default function App() {
             status={processStatus.rx}
             vuLevels={vuLevels.rx}
             onConfigChange={updateConfig}
-            onLatencyChange={(v) => handleLatencyChange('rx', v)}
           />
         </div>
         <ConsoleLog logs={logs} />
@@ -273,8 +252,6 @@ function buildTxParams(config, hostname) {
     streamName: `${safeName} . Comms TX`,
     device: config.tx?.device || '',
     gain: config.tx?.gain ?? 0,
-    latency: config.tx?.latency ?? 12,
-    networkInterface: config.networkInterface,
   };
 }
 
@@ -283,10 +260,8 @@ function buildRxParams(config) {
     source: config.rx?.source || '',
     device: config.rx?.device || '',
     gain: config.rx?.gain ?? 0,
-    latency: config.rx?.latency ?? 12,
     waitForSource: true,
     autoReconnect: true,
-    networkInterface: config.networkInterface,
   };
 }
 
@@ -369,14 +344,6 @@ const styles = {
   masterBtnStop: {
     background: 'var(--error)',
     color: '#fff',
-  },
-  linkLatency: {
-    marginLeft: 16,
-    fontSize: 12,
-    color: 'var(--text-secondary)',
-    display: 'flex',
-    alignItems: 'center',
-    cursor: 'pointer',
   },
   content: {
     flex: 1,

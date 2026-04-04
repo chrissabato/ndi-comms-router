@@ -4,7 +4,6 @@ import VUMeter from './VUMeter';
 import SourceStatus from './SourceStatus';
 
 const api = window.electronAPI;
-const LATENCY_OPTIONS = [4, 8, 12, 16, 24, 32, 48, 64];
 
 export default function LegPanel({
   leg,
@@ -15,7 +14,6 @@ export default function LegPanel({
   status,
   vuLevels,
   onConfigChange,
-  onLatencyChange,
 }) {
   const isTx = leg === 'tx';
   const accent = isTx ? '#E8A020' : '#20B8E8';
@@ -27,20 +25,10 @@ export default function LegPanel({
   useEffect(() => {
     const safeName = hostname.toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
     const params = isTx
-      ? {
-          streamName: `${safeName} . Comms TX`,
-          device: legConfig.device || '',
-          gain: legConfig.gain ?? 0,
-          latency: legConfig.latency ?? 12,
-        }
-      : {
-          source: legConfig.source || '',
-          device: legConfig.device || '',
-          gain: legConfig.gain ?? 0,
-          latency: legConfig.latency ?? 12,
-        };
+      ? { streamName: `${safeName} . Comms TX`, device: legConfig.device || '', gain: legConfig.gain ?? 0 }
+      : { source: legConfig.source || '', device: legConfig.device || '', gain: legConfig.gain ?? 0 };
     api.buildCommandPreview(leg, params).then(setCommandPreview).catch(() => {});
-  }, [leg, legConfig.device, legConfig.gain, legConfig.latency, legConfig.source, hostname, isTx]);
+  }, [leg, legConfig.device, legConfig.gain, legConfig.source, hostname, isTx]);
 
   async function handleStart() {
     const safeName = hostname.toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
@@ -49,17 +37,13 @@ export default function LegPanel({
           streamName: `${safeName} . Comms TX`,
           device: legConfig.device || '',
           gain: legConfig.gain ?? 0,
-          latency: legConfig.latency ?? 12,
-          networkInterface: config.networkInterface,
         }
       : {
           source: legConfig.source || '',
           device: legConfig.device || '',
           gain: legConfig.gain ?? 0,
-          latency: legConfig.latency ?? 12,
           waitForSource: true,
           autoReconnect: true,
-          networkInterface: config.networkInterface,
         };
     await api.startLeg(leg, params);
   }
@@ -80,33 +64,21 @@ export default function LegPanel({
     await onConfigChange({ [leg]: { gain: value } });
   }
 
-  async function handleLatency(value) {
-    onLatencyChange(value);
-  }
-
   async function handleMuteToggle() {
     await onConfigChange({ [leg]: { muted: !legConfig.muted } });
   }
 
   const isRunning = status === 'running';
   const isWaiting = status === 'waiting';
-  const isError = status === 'error';
   const canStart = status === 'idle' || status === 'stopped' || status === 'error';
 
   const statusLabel = {
-    idle: 'IDLE',
-    running: 'RUNNING',
-    waiting: 'WAITING',
-    error: 'ERROR',
-    stopped: 'STOPPED',
+    idle: 'IDLE', running: 'RUNNING', waiting: 'WAITING', error: 'ERROR', stopped: 'STOPPED',
   }[status] || status.toUpperCase();
 
   const statusColor = {
-    idle: 'var(--text-dim)',
-    running: '#3DBA6F',
-    waiting: '#E8A020',
-    error: '#E84040',
-    stopped: 'var(--text-dim)',
+    idle: 'var(--text-dim)', running: '#3DBA6F', waiting: '#E8A020',
+    error: '#E84040', stopped: 'var(--text-dim)',
   }[status] || 'var(--text-secondary)';
 
   return (
@@ -175,28 +147,6 @@ export default function LegPanel({
             />
           </div>
 
-          {/* Latency picker */}
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>BUFFER LATENCY</label>
-            <div style={styles.latencyGrid}>
-              {LATENCY_OPTIONS.map(ms => (
-                <button
-                  key={ms}
-                  style={{
-                    ...styles.latencyBtn,
-                    borderColor: legConfig.latency === ms ? accent : 'var(--border)',
-                    color: legConfig.latency === ms ? accent : 'var(--text-secondary)',
-                    background: legConfig.latency === ms ? `${accent}18` : 'var(--bg-input)',
-                    fontWeight: legConfig.latency === ms ? 600 : 400,
-                  }}
-                  onClick={() => handleLatency(ms)}
-                >
-                  {ms}ms
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Controls row */}
           <div style={styles.controls}>
             <button
@@ -208,7 +158,7 @@ export default function LegPanel({
               }}
               onClick={canStart ? handleStart : (isRunning ? handleStop : undefined)}
             >
-              {canStart ? `▶ START ${isTx ? 'TX' : 'RX'}` : (isRunning ? `■ STOP` : statusLabel)}
+              {canStart ? `▶ START ${isTx ? 'TX' : 'RX'}` : (isRunning ? '■ STOP' : statusLabel)}
             </button>
 
             <button
@@ -226,9 +176,11 @@ export default function LegPanel({
           </div>
         </div>
 
-        {/* Right column: channel grid */}
+        {/* Right column: device grid */}
         <div style={styles.rightCol}>
-          <label style={styles.fieldLabel}>LOCAL AUDIO DEVICE — CHANNEL PAIR</label>
+          <label style={styles.fieldLabel}>
+            {isTx ? 'INPUT DEVICE (capture from)' : 'OUTPUT DEVICE (play to)'}
+          </label>
           <ChannelGrid
             channelPairs={channelPairs}
             selected={legConfig.device || ''}
@@ -248,188 +200,50 @@ export default function LegPanel({
 }
 
 const styles = {
-  panel: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    minWidth: 0,
-  },
+  panel: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 },
   header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '8px 16px',
-    background: 'var(--bg-panel)',
-    borderBottom: '2px solid',
-    flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '8px 16px', background: 'var(--bg-panel)', borderBottom: '2px solid', flexShrink: 0,
   },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-  },
-  legLabel: {
-    fontFamily: "'Barlow', sans-serif",
-    fontWeight: 700,
-    fontSize: 18,
-    letterSpacing: '0.08em',
-  },
-  legDesc: {
-    fontSize: 11,
-    color: 'var(--text-secondary)',
-  },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusDot: {
-    fontSize: 8,
-  },
-  statusLabel: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 10,
-    fontWeight: 500,
-    letterSpacing: '0.08em',
-  },
-  waitingText: {
-    fontSize: 10,
-    color: 'var(--text-dim)',
-    marginLeft: 4,
-    fontStyle: 'italic',
-  },
-  body: {
-    flex: 1,
-    display: 'flex',
-    gap: 16,
-    padding: '12px 16px',
-    overflow: 'auto',
-  },
-  leftCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    width: 180,
-    flexShrink: 0,
-  },
-  rightCol: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    minWidth: 0,
-  },
-  streamName: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: 10 },
+  legLabel: { fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 18, letterSpacing: '0.08em' },
+  legDesc: { fontSize: 11, color: 'var(--text-secondary)' },
+  headerRight: { display: 'flex', alignItems: 'center', gap: 6 },
+  statusDot: { fontSize: 8 },
+  statusLabel: { fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 500, letterSpacing: '0.08em' },
+  waitingText: { fontSize: 10, color: 'var(--text-dim)', marginLeft: 4, fontStyle: 'italic' },
+  body: { flex: 1, display: 'flex', gap: 16, padding: '12px 16px', overflow: 'auto' },
+  leftCol: { display: 'flex', flexDirection: 'column', gap: 12, width: 200, flexShrink: 0 },
+  rightCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
+  streamName: { display: 'flex', flexDirection: 'column', gap: 4 },
   streamNameValue: {
-    fontSize: 11,
-    color: 'var(--text-secondary)',
-    background: 'var(--bg-input)',
-    border: '1px solid var(--border)',
-    borderRadius: 3,
-    padding: '5px 8px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-input)',
+    border: '1px solid var(--border)', borderRadius: 3, padding: '5px 8px',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  },
-  fieldRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  field: { display: 'flex', flexDirection: 'column', gap: 4 },
+  fieldRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   fieldLabel: {
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '0.12em',
-    color: 'var(--text-dim)',
-    fontFamily: "'Barlow', sans-serif",
+    fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+    color: 'var(--text-dim)', fontFamily: "'Barlow', sans-serif",
   },
-  fieldValue: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 11,
-  },
-  slider: {
-    width: '100%',
-    height: 4,
-    cursor: 'pointer',
-    borderRadius: 2,
-  },
-  latencyGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 3,
-  },
-  latencyBtn: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 10,
-    padding: '4px 2px',
-    borderRadius: 3,
-    border: '1px solid',
-    cursor: 'pointer',
-    textAlign: 'center',
-    transition: 'all 0.1s',
-  },
-  controls: {
-    display: 'flex',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
+  fieldValue: { fontFamily: "'DM Mono', monospace", fontSize: 11 },
+  slider: { width: '100%', height: 4, cursor: 'pointer', borderRadius: 2 },
+  controls: { display: 'flex', gap: 6, flexWrap: 'wrap' },
   startBtn: {
-    flex: 1,
-    fontFamily: "'Barlow', sans-serif",
-    fontWeight: 700,
-    fontSize: 11,
-    letterSpacing: '0.06em',
-    padding: '7px 8px',
-    borderRadius: 4,
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.1s',
-    minWidth: 0,
+    flex: 1, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11,
+    letterSpacing: '0.06em', padding: '7px 8px', borderRadius: 4,
+    border: 'none', cursor: 'pointer', transition: 'all 0.1s', minWidth: 0,
   },
   muteBtn: {
-    fontFamily: "'Barlow', sans-serif",
-    fontWeight: 600,
-    fontSize: 10,
-    padding: '7px 8px',
-    borderRadius: 4,
-    border: '1px solid',
-    cursor: 'pointer',
-    transition: 'all 0.1s',
-    whiteSpace: 'nowrap',
-    background: 'var(--bg-input)',
+    fontFamily: "'Barlow', sans-serif", fontWeight: 600, fontSize: 10,
+    padding: '7px 8px', borderRadius: 4, border: '1px solid',
+    cursor: 'pointer', transition: 'all 0.1s', whiteSpace: 'nowrap',
   },
   commandPreview: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '6px 16px',
-    background: '#0A0A0A',
-    borderTop: '1px solid var(--border)',
-    flexShrink: 0,
-    overflow: 'hidden',
+    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px',
+    background: '#0A0A0A', borderTop: '1px solid var(--border)', flexShrink: 0, overflow: 'hidden',
   },
-  commandLabel: {
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '0.1em',
-    color: 'var(--text-dim)',
-    flexShrink: 0,
-  },
-  commandText: {
-    fontSize: 10,
-    color: '#555',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
+  commandLabel: { fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-dim)', flexShrink: 0 },
+  commandText: { fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
 };
