@@ -1,6 +1,6 @@
 {
   "name": "ndi-comms-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NDI Full-Duplex Comms Router — XR18 to Dante Virtual Soundcard",
   "main": "dist/main/index.js",
   "scripts": {
