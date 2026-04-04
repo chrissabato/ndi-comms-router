@@ -115,6 +115,15 @@ ipcMain.handle('updater:installNow', () => {
   autoUpdater.quitAndInstall();
 });
 
+ipcMain.handle('updater:checkNow', () => {
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates();
+  } else {
+    // In dev, just send a fake up-to-date response
+    sendUpdateStatus('up-to-date');
+  }
+});
+
 // ── Wire process manager events to renderer ───────────────────────────────
 
 processManager.on('log', (data) => {

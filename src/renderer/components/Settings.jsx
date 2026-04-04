@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const api = window.electronAPI;
+
 export default function Settings({ config, onSave, onClose }) {
   const [form, setForm] = useState({
     binaryPath: config.binaryPath || 'ndi-free-audio',
@@ -8,9 +10,24 @@ export default function Settings({ config, onSave, onClose }) {
     networkInterface: config.networkInterface || 'auto',
   });
   const [saving, setSaving] = useState(false);
+  const [updateState, setUpdateState] = useState(null); // null | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'ready' | 'error'
+  const [updateInfo, setUpdateInfo] = useState('');
 
   function update(key, value) {
     setForm(prev => ({ ...prev, [key]: value }));
+  }
+
+  async function handleCheckUpdates() {
+    setUpdateState('checking');
+    setUpdateInfo('');
+    const unsub = api.onUpdaterStatus((data) => {
+      setUpdateState(data.status);
+      if (data.status === 'available' || data.status === 'ready') setUpdateInfo(data.version || '');
+      if (data.status === 'downloading') setUpdateInfo(`${data.percent ?? 0}%`);
+      if (data.status === 'error') setUpdateInfo(data.message || '');
+      if (['up-to-date', 'ready', 'error'].includes(data.status)) unsub();
+    });
+    await api.checkForUpdates();
   }
 
   async function handleSave() {
@@ -91,6 +108,37 @@ export default function Settings({ config, onSave, onClose }) {
               Auto-start both legs on launch
             </label>
             <p style={styles.hint}>Starts TX and RX immediately when the app opens, using saved device settings</p>
+          </div>
+
+          {/* Updates */}
+          <div style={styles.field}>
+            <label style={styles.label}>Updates</label>
+            <p style={styles.hint}>The app checks for updates automatically on launch. You can also check manually.</p>
+            <div style={styles.updateRow}>
+              <button
+                style={styles.updateBtn}
+                onClick={handleCheckUpdates}
+                disabled={updateState === 'checking' || updateState === 'downloading'}
+              >
+                {updateState === 'checking' ? 'Checking…'
+                  : updateState === 'downloading' ? `Downloading ${updateInfo}`
+                  : 'Check for Updates'}
+              </button>
+              {updateState === 'up-to-date' && (
+                <span style={{ color: '#3DBA6F', fontSize: 12 }}>You're up to date</span>
+              )}
+              {updateState === 'available' && (
+                <span style={{ color: '#E8A020', fontSize: 12 }}>v{updateInfo} available — downloading...</span>
+              )}
+              {updateState === 'ready' && (
+                <button style={styles.installBtn} onClick={() => api.installUpdate()}>
+                  Restart &amp; Install v{updateInfo}
+                </button>
+              )}
+              {updateState === 'error' && (
+                <span style={{ color: '#E84040', fontSize: 11 }}>{updateInfo || 'Update check failed'}</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -248,6 +296,34 @@ const styles = {
     borderRadius: 4,
     cursor: 'pointer',
     fontSize: 13,
+    fontWeight: 700,
+    fontFamily: "'Barlow', sans-serif",
+  },
+  updateRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
+    flexWrap: 'wrap',
+  },
+  updateBtn: {
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-primary)',
+    padding: '7px 16px',
+    borderRadius: 4,
+    cursor: 'pointer',
+    fontSize: 12,
+    fontFamily: "'Barlow', sans-serif",
+  },
+  installBtn: {
+    background: '#3DBA6F',
+    border: 'none',
+    color: '#000',
+    padding: '7px 16px',
+    borderRadius: 4,
+    cursor: 'pointer',
+    fontSize: 12,
     fontWeight: 700,
     fontFamily: "'Barlow', sans-serif",
   },
