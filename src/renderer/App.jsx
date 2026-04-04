@@ -157,7 +157,7 @@ export default function App() {
             leg="tx"
             config={config}
             hostname={hostname}
-            channelPairs={audioDevices.channelPairs}
+            channelPairs={toChannelPairs(audioDevices.inputDevices)}
             ndiSources={ndiSources}
             status={processStatus.tx}
             vuLevels={vuLevels.tx}
@@ -168,7 +168,7 @@ export default function App() {
             leg="rx"
             config={config}
             hostname={hostname}
-            channelPairs={audioDevices.channelPairs}
+            channelPairs={toChannelPairs(audioDevices.outputDevices)}
             ndiSources={ndiSources}
             status={processStatus.rx}
             vuLevels={vuLevels.rx}
@@ -244,6 +244,11 @@ function UpdateBanner({ status, onDismiss }) {
       </button>
     </div>
   );
+}
+
+function toChannelPairs(deviceNames) {
+  if (!deviceNames) return [];
+  return deviceNames.map(name => ({ label: name, deviceString: name }));
 }
 
 function buildTxParams(config, hostname) {

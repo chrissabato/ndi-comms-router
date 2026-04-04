@@ -181,6 +181,11 @@ export default function LegPanel({
           <label style={styles.fieldLabel}>
             {isTx ? 'INPUT DEVICE (capture from)' : 'OUTPUT DEVICE (play to)'}
           </label>
+          {legConfig.device && channelPairs.length > 0 && !channelPairs.find(p => p.deviceString === legConfig.device) && (
+            <div style={styles.deviceWarning}>
+              ⚠ Saved device not found: <span className="mono">{legConfig.device}</span> — select a device below
+            </div>
+          )}
           <ChannelGrid
             channelPairs={channelPairs}
             selected={legConfig.device || ''}
@@ -239,6 +244,16 @@ const styles = {
     fontFamily: "'Barlow', sans-serif", fontWeight: 600, fontSize: 10,
     padding: '7px 8px', borderRadius: 4, border: '1px solid',
     cursor: 'pointer', transition: 'all 0.1s', whiteSpace: 'nowrap',
+  },
+  deviceWarning: {
+    fontSize: 11,
+    color: '#E8A020',
+    background: 'rgba(232,160,32,0.08)',
+    border: '1px solid rgba(232,160,32,0.3)',
+    borderRadius: 3,
+    padding: '4px 8px',
+    marginBottom: 4,
+    lineHeight: 1.4,
   },
   commandPreview: {
     display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px',

@@ -3,7 +3,7 @@ import React from 'react';
 export default function ChannelGrid({ channelPairs, selected, onChange, accent }) {
   if (!channelPairs || channelPairs.length === 0) {
     return (
-      <div style={styles.empty}>No channels detected</div>
+      <div style={styles.empty}>No devices detected — check binary path in Settings</div>
     );
   }
 
@@ -35,18 +35,20 @@ export default function ChannelGrid({ channelPairs, selected, onChange, accent }
 const styles = {
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 4,
+    gridTemplateColumns: '1fr',
+    gap: 3,
+    overflowY: 'auto',
+    maxHeight: 220,
   },
   cell: {
     fontFamily: "'DM Mono', monospace",
-    fontSize: 10,
-    padding: '5px 4px',
+    fontSize: 11,
+    padding: '6px 10px',
     borderRadius: 3,
     border: '1px solid',
     cursor: 'pointer',
-    textAlign: 'center',
-    lineHeight: 1.2,
+    textAlign: 'left',
+    lineHeight: 1.3,
     transition: 'all 0.1s',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -54,8 +56,7 @@ const styles = {
   },
   empty: {
     color: 'var(--text-dim)',
-    fontSize: 12,
-    textAlign: 'center',
+    fontSize: 11,
     padding: '12px 0',
     fontStyle: 'italic',
   },
