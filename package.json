@@ -22,7 +22,7 @@
     "directories": {
       "output": "release"
     },
-    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "artifactName": "ndi-comms-router-setup-${version}.${ext}",
     "win": {
       "target": "nsis",
       "icon": "src/assets/icon.ico"
