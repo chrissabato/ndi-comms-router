@@ -7,7 +7,7 @@ class ProcessManager extends EventEmitter {
   constructor() {
     super();
     this._binaryPath = 'ndi-free-audio';
-    this._processes = { tx: null, rx: null };
+    this._processes = { tx: null, rx: null, duplex: null };
     this._status = { tx: 'idle', rx: 'idle' };
     this._params = { tx: null, rx: null };
     this._pendingSources = null;
@@ -140,6 +140,11 @@ class ProcessManager extends EventEmitter {
   }
 
   stopLeg(leg) {
+    // If running as combined duplex, stopping either leg stops both
+    if (this._processes.duplex) {
+      this.stopAll();
+      return;
+    }
     const proc = this._processes[leg];
     if (proc) {
       try { proc.kill('SIGTERM'); } catch {}
@@ -156,11 +161,82 @@ class ProcessManager extends EventEmitter {
   }
 
   startBoth(txParams, rxParams) {
-    this.startLeg('tx', txParams);
-    this.startLeg('rx', rxParams);
+    this.stopAll();
+    this._params.tx = txParams;
+    this._params.rx = rxParams;
+
+    // Combine TX and RX into a single process so there is only one NDI library
+    // instance — two separate instances on the same machine can interfere.
+    const args = [...this._buildArgs('tx', txParams), ...this._buildArgs('rx', rxParams)];
+    let proc;
+    try {
+      proc = spawn(this._binaryPath, args, {
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (err) {
+      this._setStatus('tx', 'error');
+      this._setStatus('rx', 'error');
+      this._emitLog('tx', `Failed to start full-duplex: ${err.message}`, 'error');
+      return;
+    }
+
+    this._processes.duplex = proc;
+    this._setStatus('tx', 'running');
+    this._setStatus('rx', 'running');
+
+    const bin = `"${this._binaryPath}"`;
+    const preview = `${bin} ${args.map(a => a.startsWith('-') ? a : `"${a}"`).join(' ')}`;
+    this._emitLog('tx', `Full-duplex started: ${preview}`);
+
+    proc.stdout.on('data', (data) => {
+      for (const line of data.toString().split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        this._emitLog('tx', trimmed);
+      }
+    });
+
+    proc.stderr.on('data', (data) => {
+      for (const line of data.toString().split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        this._emitLog('tx', trimmed, 'error');
+      }
+    });
+
+    proc.on('close', (code, signal) => {
+      this._processes.duplex = null;
+      const status = (signal === 'SIGTERM' || signal === 'SIGKILL') ? 'stopped' : 'error';
+      this._setStatus('tx', status);
+      this._setStatus('rx', status);
+      if (status === 'error') {
+        this._emitLog('tx', `Full-duplex process exited with code ${code}`, 'error');
+      }
+    });
+
+    proc.on('error', (err) => {
+      this._processes.duplex = null;
+      this._setStatus('tx', 'error');
+      this._setStatus('rx', 'error');
+      this._emitLog('tx', `Full-duplex process error: ${err.message}`, 'error');
+    });
   }
 
   stopAll() {
+    // Stop combined duplex process
+    const duplex = this._processes.duplex;
+    if (duplex) {
+      try { duplex.kill('SIGTERM'); } catch {}
+      setTimeout(() => {
+        if (this._processes.duplex === duplex) {
+          try { duplex.kill('SIGKILL'); } catch {}
+        }
+      }, 3000);
+      this._processes.duplex = null;
+      this._setStatus('tx', 'idle');
+      this._setStatus('rx', 'idle');
+    }
     this.stopLeg('tx');
     this.stopLeg('rx');
   }
@@ -179,6 +255,11 @@ class ProcessManager extends EventEmitter {
   cleanup() {
     if (this._params.tx) this._params.tx.autoReconnect = false;
     if (this._params.rx) this._params.rx.autoReconnect = false;
+    // Kill duplex process synchronously on cleanup
+    if (this._processes.duplex) {
+      try { this._processes.duplex.kill('SIGKILL'); } catch {}
+      this._processes.duplex = null;
+    }
     this.stopAll();
   }
 
