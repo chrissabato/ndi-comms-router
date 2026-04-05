@@ -84,24 +84,19 @@ class NdiScanner extends EventEmitter {
         manual: false,
       }));
 
+      this._log(`Poll: found ${parsed.length} source(s)${parsed.length ? ': ' + parsed.map(s => s.name).join(', ') : ''}`);
+
       const prevNames = this._discoveredSources.map(s => s.name).sort().join('\n');
       const nextNames = parsed.map(s => s.name).sort().join('\n');
       if (prevNames !== nextNames) {
         this._discoveredSources = parsed;
-        if (parsed.length > 0) {
-          this._log(`Found ${parsed.length} NDI source(s): ${parsed.map(s => s.name).join(', ')}`);
-        }
         this.emit('sources', this.getSources());
       }
     } catch (err) {
-      // "Did not find" is normal when no sources exist — not an error worth logging
-      if (err.message && err.message.includes('Did not find')) {
-        if (this._discoveredSources.length > 0) {
-          this._discoveredSources = [];
-          this.emit('sources', this.getSources());
-        }
-      } else {
-        this._log(`NDI discovery error: ${err.message}`, 'warn');
+      this._log(`Poll error: ${err.message}`, 'warn');
+      if (this._discoveredSources.length > 0) {
+        this._discoveredSources = [];
+        this.emit('sources', this.getSources());
       }
     } finally {
       this._polling = false;

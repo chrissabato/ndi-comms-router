@@ -56,6 +56,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    ndiScanner.start();
   });
 
   mainWindow.on('closed', () => {
@@ -170,7 +171,6 @@ app.whenReady().then(() => {
     ndiScanner.setDiscoveryServer(config.discoveryServer);
   }
 
-  ndiScanner.start();
   createWindow();
 
   // Check for updates a few seconds after launch (only in packaged app)
