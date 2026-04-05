@@ -36,11 +36,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Patch grandiose for NDI 6 SDK (p_ndi_name → p_ndi_recv_name)
+      - name: Patch grandiose for NDI 6 SDK and stable-source discovery
         shell: powershell
         run: |
-          $file = "node_modules\grandiose\src\grandiose_receive.cc"
-          (Get-Content $file) -replace 'receiveConfig\.p_ndi_name = c->name;', 'receiveConfig.p_ndi_recv_name = c->name;' | Set-Content $file
+          # NDI 6 SDK renamed p_ndi_name to p_ndi_recv_name in recv create struct
+          $recv = "node_modules\grandiose\src\grandiose_receive.cc"
+          (Get-Content $recv) -replace 'receiveConfig\.p_ndi_name = c->name;', 'receiveConfig.p_ndi_recv_name = c->name;' | Set-Content $recv
+
+          # grandiose rejects the promise when NDIlib_find_wait_for_sources returns false
+          # (no source changes), even if sources exist. Fix: only reject when no sources found.
+          $find = "node_modules\grandiose\src\grandiose_find.cc"
+          (Get-Content $find) -replace 'if \(!findStatus\) \{', 'if (!findStatus && c->no_sources == 0) {' | Set-Content $find
 
       - name: Stage NDI SDK files for grandiose
         shell: powershell
