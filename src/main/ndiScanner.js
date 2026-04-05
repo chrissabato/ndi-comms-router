@@ -1,49 +1,55 @@
 const { EventEmitter } = require('events');
 
-const POLL_INTERVAL_MS = 3000;
+// grandiose.find(options, waitMs) is async — returns a Promise that resolves
+// with an array of { name, urlAddress } objects. The wait happens in a worker
+// thread so it never blocks the main thread.
+const POLL_INTERVAL_MS = 5000;
+const FIND_WAIT_MS = 500; // worker waits up to 2x this per NDI SDK call
 
-// Try to load grandiose (optional native module wrapping NDI SDK).
-// Falls back gracefully if not installed or NDI SDK is absent.
 let grandiose = null;
 try {
   grandiose = require('grandiose');
 } catch (_) {
-  // grandiose unavailable — manual entry only
+  // grandiose not available — manual entry only
 }
 
 class NdiScanner extends EventEmitter {
   constructor() {
     super();
     this._discoveryServer = '';
-    this._finder = null;
     this._discoveredSources = [];
     this._manualSources = [];
     this._timer = null;
     this._running = false;
-    this._noGrandioseLogged = false;
+    this._polling = false;
   }
 
+  // binaryPath no longer needed (grandiose uses NDI SDK directly)
+  // kept as no-op so callers don't need to change
+  setBinaryPath() {}
+
   setDiscoveryServer(ip) {
-    const cleaned = (ip || '').trim();
-    if (cleaned === this._discoveryServer) return;
-    this._discoveryServer = cleaned;
-    if (this._running) {
-      this._closeFinder();
-      this._openFinder();
-    }
+    this._discoveryServer = (ip || '').trim();
   }
 
   start() {
     if (this._running) return;
     this._running = true;
-    this._openFinder();
-    this._timer = setInterval(() => this._poll(), POLL_INTERVAL_MS);
+    if (!grandiose) {
+      this._log('grandiose not available — add NDI sources manually in the RX panel.', 'info');
+    } else {
+      this._log(
+        'NDI source discovery started' +
+        (this._discoveryServer ? ` (discovery server: ${this._discoveryServer})` : '')
+      );
+      this._doPoll();
+    }
+    this._timer = setInterval(() => this._doPoll(), POLL_INTERVAL_MS);
   }
 
   stop() {
     this._running = false;
     if (this._timer) { clearInterval(this._timer); this._timer = null; }
-    this._closeFinder();
   }
 
   getSources() {
@@ -65,41 +71,13 @@ class NdiScanner extends EventEmitter {
     }
   }
 
-  _openFinder() {
-    if (!grandiose) {
-      if (!this._noGrandioseLogged) {
-        this._noGrandioseLogged = true;
-        this._log('grandiose not available — NDI source discovery disabled. Add sources manually in the RX panel.', 'info');
-      }
-      return;
-    }
+  async _doPoll() {
+    if (!grandiose || this._polling) return;
+    this._polling = true;
     try {
       const opts = {};
       if (this._discoveryServer) opts.extraIPs = this._discoveryServer;
-      this._finder = grandiose.find(opts);
-      this._log(
-        'NDI source discovery started' +
-        (this._discoveryServer ? ` (discovery server: ${this._discoveryServer})` : '')
-      );
-      // Immediate first poll
-      this._poll();
-    } catch (err) {
-      this._log(`NDI discovery failed to start: ${err.message}`, 'error');
-    }
-  }
-
-  _closeFinder() {
-    this._finder = null;
-    if (this._discoveredSources.length > 0) {
-      this._discoveredSources = [];
-      this.emit('sources', this.getSources());
-    }
-  }
-
-  _poll() {
-    if (!this._finder) return;
-    try {
-      const raw = this._finder.sources();
+      const raw = await grandiose.find(opts, FIND_WAIT_MS);
       const parsed = raw.map(s => ({
         name: s.name,
         urlAddress: s.urlAddress || null,
@@ -108,7 +86,6 @@ class NdiScanner extends EventEmitter {
 
       const prevNames = this._discoveredSources.map(s => s.name).sort().join('\n');
       const nextNames = parsed.map(s => s.name).sort().join('\n');
-
       if (prevNames !== nextNames) {
         this._discoveredSources = parsed;
         if (parsed.length > 0) {
@@ -117,7 +94,17 @@ class NdiScanner extends EventEmitter {
         this.emit('sources', this.getSources());
       }
     } catch (err) {
-      this._log(`NDI discovery poll error: ${err.message}`, 'warn');
+      // "Did not find" is normal when no sources exist — not an error worth logging
+      if (err.message && err.message.includes('Did not find')) {
+        if (this._discoveredSources.length > 0) {
+          this._discoveredSources = [];
+          this.emit('sources', this.getSources());
+        }
+      } else {
+        this._log(`NDI discovery error: ${err.message}`, 'warn');
+      }
+    } finally {
+      this._polling = false;
     }
   }
 
