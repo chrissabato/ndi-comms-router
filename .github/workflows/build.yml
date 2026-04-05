@@ -39,6 +39,8 @@ jobs:
       - name: Stage NDI SDK files for grandiose
         shell: powershell
         run: |
+          New-Item -ItemType Directory -Force -Path "node_modules\grandiose\include"
+          New-Item -ItemType Directory -Force -Path "node_modules\grandiose\lib\win_x64"
           Copy-Item -Path "ndi-sdk\Include\*" -Destination "node_modules\grandiose\include\" -Force
           Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.lib" -Destination "node_modules\grandiose\lib\win_x64\" -Force
           Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.dll" -Destination "node_modules\grandiose\lib\win_x64\" -Force
