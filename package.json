@@ -22,6 +22,12 @@
     "asarUnpack": [
       "node_modules/grandiose/**"
     ],
+    "extraFiles": [
+      {
+        "from": "ndi-sdk/Lib/x64/Processing.NDI.Lib.x64.dll",
+        "to": "."
+      }
+    ],
     "directories": {
       "output": "release"
     },

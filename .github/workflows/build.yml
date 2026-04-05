@@ -48,6 +48,14 @@ jobs:
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild --parallel --force --types prod,optional
 
+      - name: Verify grandiose compiled
+        shell: powershell
+        run: |
+          $node = "node_modules\grandiose\build\Release\grandiose.node"
+          $dll  = "node_modules\grandiose\build\Release\Processing.NDI.Lib.x64.dll"
+          if (Test-Path $node) { Write-Host "OK: $node" } else { Write-Error "MISSING: $node" }
+          if (Test-Path $dll)  { Write-Host "OK: $dll"  } else { Write-Error "MISSING: $dll"  }
+
       - name: Set version from tag
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
