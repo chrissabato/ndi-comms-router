@@ -52,7 +52,7 @@
     "react-dom": "^18.2.0"
   },
   "optionalDependencies": {
-    "grandiose": "^1.0.1"
+    "grandiose": "0.0.4"
   },
 "devDependencies": {
     "@babel/core": "^7.23.0",
