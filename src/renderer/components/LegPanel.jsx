@@ -192,7 +192,7 @@ const styles = {
   statusLabel: { fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 500, letterSpacing: '0.08em' },
   waitingText: { fontSize: 10, color: 'var(--text-dim)', marginLeft: 4, fontStyle: 'italic' },
   body: { flex: 1, display: 'flex', gap: 16, padding: '12px 16px', overflow: 'auto' },
-  leftCol: { display: 'flex', flexDirection: 'column', gap: 12, width: 200, flexShrink: 0 },
+  leftCol: { display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minWidth: 0 },
   rightCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
   streamName: { display: 'flex', flexDirection: 'column', gap: 4 },
   streamNameValue: {
