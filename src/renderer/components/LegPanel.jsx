@@ -225,9 +225,9 @@ const styles = {
     lineHeight: 1.4,
   },
   commandPreview: {
-    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px',
-    background: '#0A0A0A', borderTop: '1px solid var(--border)', flexShrink: 0, overflow: 'hidden',
+    display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 16px',
+    background: '#0A0A0A', borderTop: '1px solid var(--border)', flexShrink: 0,
   },
-  commandLabel: { fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-dim)', flexShrink: 0 },
-  commandText: { fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  commandLabel: { fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-dim)', flexShrink: 0, paddingTop: 1 },
+  commandText: { fontSize: 10, color: '#555', wordBreak: 'break-all', lineHeight: 1.5 },
 };
