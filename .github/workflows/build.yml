@@ -40,7 +40,8 @@ jobs:
         shell: powershell
         run: |
           Invoke-WebRequest -Uri "https://get.ndi.video/e/1092312/SDK-NDI-SDK-NDI20620SDK-exe/lygzks/2192688204/h/xrDPmoiEOF6s0mBpzVfQu5jArzrcCaN-D_PMf2jCFFw" -OutFile "$env:TEMP\ndi-sdk.exe"
-          Start-Process -FilePath "$env:TEMP\ndi-sdk.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -NoNewWindow
+          & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\ndi-sdk.exe" -o"C:\NDI_SDK" -y
+          echo "NDI_SDK_DIR=C:\NDI_SDK" >> $env:GITHUB_ENV
 
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild --parallel --force --types prod,optional
