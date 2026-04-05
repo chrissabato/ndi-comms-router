@@ -36,6 +36,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Patch grandiose for NDI 6 SDK (p_ndi_name → p_ndi_recv_name)
+        shell: powershell
+        run: |
+          $file = "node_modules\grandiose\src\grandiose_receive.cc"
+          (Get-Content $file) -replace 'receiveConfig\.p_ndi_name = c->name;', 'receiveConfig.p_ndi_recv_name = c->name;' | Set-Content $file
+
       - name: Stage NDI SDK files for grandiose
         shell: powershell
         run: |
