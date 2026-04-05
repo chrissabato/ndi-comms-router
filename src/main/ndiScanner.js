@@ -53,7 +53,9 @@ class NdiScanner extends EventEmitter {
   }
 
   getSources() {
-    return [...this._discoveredSources, ...this._manualSources];
+    const seen = new Set();
+    return [...this._discoveredSources, ...this._manualSources]
+      .filter(s => !seen.has(s.name) && seen.add(s.name));
   }
 
   addManualSource(name) {
@@ -78,11 +80,10 @@ class NdiScanner extends EventEmitter {
       const opts = {};
       if (this._discoveryServer) opts.extraIPs = this._discoveryServer;
       const raw = await grandiose.find(opts, FIND_WAIT_MS);
-      const parsed = raw.map(s => ({
-        name: s.name,
-        urlAddress: s.urlAddress || null,
-        manual: false,
-      }));
+      const seen = new Set();
+      const parsed = raw
+        .filter(s => s.name && !seen.has(s.name) && seen.add(s.name))
+        .map(s => ({ name: s.name, urlAddress: s.urlAddress || null, manual: false }));
 
       const prevNames = this._discoveredSources.map(s => s.name).sort().join('\n');
       const nextNames = parsed.map(s => s.name).sort().join('\n');

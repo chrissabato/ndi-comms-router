@@ -6,11 +6,7 @@ export default function SourceStatus({ sources, selected, onSelect, processStatu
   const [manualInput, setManualInput] = useState('');
 
   function getSourceState(sourceName) {
-    if (!sourceName) return 'scanning';
-    if (processStatus === 'running') {
-      const active = sources.find(s => s.name === sourceName);
-      if (active) return 'connected';
-    }
+    if (processStatus === 'running' && sourceName === selected) return 'connected';
     const found = sources.find(s => s.name === sourceName);
     return found ? 'available' : 'scanning';
   }
