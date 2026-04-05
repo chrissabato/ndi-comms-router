@@ -19,6 +19,9 @@
       "dist/**/*",
       "package.json"
     ],
+    "asarUnpack": [
+      "node_modules/grandiose/**"
+    ],
     "directories": {
       "output": "release"
     },
