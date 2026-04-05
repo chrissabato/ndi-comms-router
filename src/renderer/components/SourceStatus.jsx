@@ -141,6 +141,10 @@ const styles = {
     borderRadius: 4,
     border: '1px solid var(--border)',
     overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    minHeight: 0,
   },
   header: {
     display: 'flex',
@@ -157,7 +161,7 @@ const styles = {
     color: 'var(--text-secondary)',
   },
   count: { fontSize: 10, color: 'var(--text-dim)' },
-  list: { maxHeight: 110, overflowY: 'auto' },
+  list: { flex: 1, overflowY: 'scroll', scrollbarWidth: 'auto', scrollbarColor: '#444 #1a1a1a' },
   empty: {
     display: 'flex',
     alignItems: 'center',

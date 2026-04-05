@@ -200,7 +200,7 @@ const styles = {
     border: '1px solid var(--border)', borderRadius: 3, padding: '5px 8px',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
-  field: { display: 'flex', flexDirection: 'column', gap: 4 },
+  field: { display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0 },
   fieldRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   fieldLabel: {
     fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
