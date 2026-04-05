@@ -45,8 +45,11 @@ jobs:
           Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.lib" -Destination "node_modules\grandiose\lib\win_x64\" -Force
           Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.dll" -Destination "node_modules\grandiose\lib\win_x64\" -Force
 
+      - name: Install Python setuptools (required by node-gyp on Python 3.12+)
+        run: pip install setuptools
+
       - name: Rebuild native modules for Electron
-        run: npx electron-rebuild --parallel --force --types prod,optional
+        run: npx @electron/rebuild --parallel --force --types prod,optional
 
       - name: Verify grandiose compiled
         shell: powershell
