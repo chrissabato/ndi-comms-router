@@ -36,12 +36,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install NDI SDK
+      - name: Stage NDI SDK files for grandiose
         shell: powershell
         run: |
-          Invoke-WebRequest -Uri "https://get.ndi.video/e/1092312/SDK-NDI-SDK-NDI20620SDK-exe/lygzks/2192688204/h/xrDPmoiEOF6s0mBpzVfQu5jArzrcCaN-D_PMf2jCFFw" -OutFile "$env:TEMP\ndi-sdk.exe"
-          & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\ndi-sdk.exe" -o"C:\NDI_SDK" -y
-          echo "NDI_SDK_DIR=C:\NDI_SDK" >> $env:GITHUB_ENV
+          Copy-Item -Path "ndi-sdk\Include\*" -Destination "node_modules\grandiose\include\" -Force
+          Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.lib" -Destination "node_modules\grandiose\lib\win_x64\" -Force
+          Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.dll" -Destination "node_modules\grandiose\lib\win_x64\" -Force
 
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild --parallel --force --types prod,optional
