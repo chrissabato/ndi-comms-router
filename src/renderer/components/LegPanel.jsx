@@ -24,7 +24,7 @@ export default function LegPanel({
       ? { streamName: 'Comms TX', device: legConfig.device || '', gain: legConfig.gain ?? 0 }
       : { source: legConfig.source || '', device: legConfig.device || '', gain: legConfig.gain ?? 0 };
     api.buildCommandPreview(leg, params).then(setCommandPreview).catch(() => {});
-  }, [leg, legConfig.device, legConfig.gain, legConfig.source, hostname, isTx]);
+  }, [leg, legConfig.device, legConfig.gain, legConfig.source, isTx]);
 
   async function handleStart() {
     const params = isTx

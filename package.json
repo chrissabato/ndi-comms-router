@@ -42,6 +42,9 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
+  "optionalDependencies": {
+    "grandiose": "^1.0.1"
+  },
 "devDependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",

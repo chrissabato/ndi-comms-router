@@ -23,6 +23,7 @@ module.exports = {
   externals: {
     // Native modules must not be bundled
     naudiodon: 'commonjs naudiodon',
+    grandiose: 'commonjs grandiose',
     electron: 'commonjs electron',
     'electron-updater': 'commonjs electron-updater',
   },

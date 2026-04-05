@@ -74,6 +74,9 @@ ipcMain.handle('config:set', (_, updates) => {
     ndiScanner.setBinaryPath(updates.binaryPath);
     processManager.setBinaryPath(updates.binaryPath);
   }
+  if ('discoveryServer' in updates) {
+    ndiScanner.setDiscoveryServer(updates.discoveryServer);
+  }
   return config;
 });
 
@@ -162,6 +165,9 @@ app.whenReady().then(() => {
   if (config.binaryPath) {
     ndiScanner.setBinaryPath(config.binaryPath);
     processManager.setBinaryPath(config.binaryPath);
+  }
+  if (config.discoveryServer) {
+    ndiScanner.setDiscoveryServer(config.discoveryServer);
   }
 
   ndiScanner.start();

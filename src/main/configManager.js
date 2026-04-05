@@ -7,6 +7,7 @@ const DEFAULT_CONFIG = {
   binaryPath: 'ndi-free-audio',
   autoStart: false,
   networkInterface: 'auto',
+  discoveryServer: '',
   tx: {
     device: '',
     gain: 0,
