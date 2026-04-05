@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import ChannelGrid from './ChannelGrid';
-import VUMeter from './VUMeter';
 import SourceStatus from './SourceStatus';
 
 const api = window.electronAPI;
@@ -8,11 +7,9 @@ const api = window.electronAPI;
 export default function LegPanel({
   leg,
   config,
-  hostname,
   channelPairs,
   ndiSources,
   status,
-  vuLevels,
   onConfigChange,
 }) {
   const isTx = leg === 'tx';
@@ -23,18 +20,16 @@ export default function LegPanel({
 
   // Rebuild CLI preview when params change
   useEffect(() => {
-    const safeName = hostname.toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
     const params = isTx
-      ? { streamName: `${safeName} . Comms TX`, device: legConfig.device || '', gain: legConfig.gain ?? 0 }
+      ? { streamName: 'Comms TX', device: legConfig.device || '', gain: legConfig.gain ?? 0 }
       : { source: legConfig.source || '', device: legConfig.device || '', gain: legConfig.gain ?? 0 };
     api.buildCommandPreview(leg, params).then(setCommandPreview).catch(() => {});
   }, [leg, legConfig.device, legConfig.gain, legConfig.source, hostname, isTx]);
 
   async function handleStart() {
-    const safeName = hostname.toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
     const params = isTx
       ? {
-          streamName: `${safeName} . Comms TX`,
+          streamName: 'Comms TX',
           device: legConfig.device || '',
           gain: legConfig.gain ?? 0,
         }
@@ -62,10 +57,6 @@ export default function LegPanel({
 
   async function handleGainChange(value) {
     await onConfigChange({ [leg]: { gain: value } });
-  }
-
-  async function handleMuteToggle() {
-    await onConfigChange({ [leg]: { muted: !legConfig.muted } });
   }
 
   const isRunning = status === 'running';
@@ -102,18 +93,12 @@ export default function LegPanel({
       <div style={styles.body}>
         {/* Left column: VU + controls */}
         <div style={styles.leftCol}>
-          <VUMeter
-            left={vuLevels?.left ?? -60}
-            right={vuLevels?.right ?? -60}
-            accent={accent}
-          />
-
           {/* NDI stream name (TX) or source selector (RX) */}
           {isTx ? (
             <div style={styles.streamName}>
               <label style={styles.fieldLabel}>NDI STREAM NAME</label>
               <div style={styles.streamNameValue} className="mono">
-                {hostname.toUpperCase().replace(/[^A-Z0-9\-]/g, '-')} . Comms TX
+                Comms TX
               </div>
             </div>
           ) : (
@@ -143,7 +128,8 @@ export default function LegPanel({
               step={1}
               value={legConfig.gain ?? 0}
               onChange={e => handleGainChange(Number(e.target.value))}
-              style={{ ...styles.slider, accentColor: accent }}
+              disabled={isRunning || isWaiting}
+              style={{ ...styles.slider, accentColor: accent, opacity: (isRunning || isWaiting) ? 0.4 : 1, cursor: (isRunning || isWaiting) ? 'not-allowed' : 'pointer' }}
             />
           </div>
 
@@ -161,18 +147,6 @@ export default function LegPanel({
               {canStart ? `▶ START ${isTx ? 'TX' : 'RX'}` : (isRunning ? '■ STOP' : statusLabel)}
             </button>
 
-            <button
-              style={{
-                ...styles.muteBtn,
-                borderColor: legConfig.muted ? accent : 'var(--border)',
-                color: legConfig.muted ? accent : 'var(--text-secondary)',
-                background: legConfig.muted ? `${accent}15` : 'var(--bg-input)',
-              }}
-              onClick={handleMuteToggle}
-              title="Mute (silences without stopping process)"
-            >
-              {legConfig.muted ? '🔇 MUTED' : '🔊 MUTE'}
-            </button>
           </div>
         </div>
 
@@ -239,11 +213,6 @@ const styles = {
     flex: 1, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11,
     letterSpacing: '0.06em', padding: '7px 8px', borderRadius: 4,
     border: 'none', cursor: 'pointer', transition: 'all 0.1s', minWidth: 0,
-  },
-  muteBtn: {
-    fontFamily: "'Barlow', sans-serif", fontWeight: 600, fontSize: 10,
-    padding: '7px 8px', borderRadius: 4, border: '1px solid',
-    cursor: 'pointer', transition: 'all 0.1s', whiteSpace: 'nowrap',
   },
   deviceWarning: {
     fontSize: 11,

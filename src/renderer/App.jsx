@@ -13,7 +13,6 @@ export default function App() {
   const [audioDevices, setAudioDevices] = useState({ channelPairs: [], systemDevices: [] });
   const [ndiSources, setNdiSources] = useState([]);
   const [processStatus, setProcessStatus] = useState({ tx: 'idle', rx: 'idle' });
-  const [vuLevels, setVuLevels] = useState({ tx: { left: -60, right: -60 }, rx: { left: -60, right: -60 } });
   const [logs, setLogs] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(null); // null | { status, version?, percent?, message? }
@@ -57,10 +56,6 @@ export default function App() {
       setProcessStatus(prev => ({ ...prev, [leg]: status }));
     });
 
-    const unsubVu = api.onVuLevels(({ leg, left, right }) => {
-      setVuLevels(prev => ({ ...prev, [leg]: { left, right } }));
-    });
-
     const unsubUpdater = api.onUpdaterStatus((data) => {
       // Only surface states the user needs to act on or be aware of
       if (['available', 'downloading', 'ready', 'error'].includes(data.status)) {
@@ -72,7 +67,6 @@ export default function App() {
       unsubLog();
       unsubSources();
       unsubStatus();
-      unsubVu();
       unsubUpdater();
     };
   }, []);
@@ -91,7 +85,7 @@ export default function App() {
   }, []);
 
   const handleStartBoth = useCallback(async () => {
-    const txParams = buildTxParams(config, hostname);
+    const txParams = buildTxParams(config);
     const rxParams = buildRxParams(config);
     await api.startBoth(txParams, rxParams);
   }, [config, hostname]);
@@ -159,22 +153,18 @@ export default function App() {
           <LegPanel
             leg="tx"
             config={config}
-            hostname={hostname}
             channelPairs={toChannelPairs(audioDevices.inputDevices)}
             ndiSources={ndiSources}
             status={processStatus.tx}
-            vuLevels={vuLevels.tx}
             onConfigChange={updateConfig}
           />
           <div style={styles.legDivider} />
           <LegPanel
             leg="rx"
             config={config}
-            hostname={hostname}
             channelPairs={toChannelPairs(audioDevices.outputDevices)}
             ndiSources={ndiSources}
             status={processStatus.rx}
-            vuLevels={vuLevels.rx}
             onConfigChange={updateConfig}
           />
         </div>
@@ -254,10 +244,9 @@ function toChannelPairs(deviceNames) {
   return deviceNames.map(name => ({ label: name, deviceString: name }));
 }
 
-function buildTxParams(config, hostname) {
-  const safeName = hostname.toUpperCase().replace(/[^A-Z0-9\-]/g, '-');
+function buildTxParams(config) {
   return {
-    streamName: `${safeName} . Comms TX`,
+    streamName: 'Comms TX',
     device: config.tx?.device || '',
     gain: config.tx?.gain ?? 0,
   };

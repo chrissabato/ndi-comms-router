@@ -19,13 +19,15 @@ function parseDeviceList(output) {
 
     if (!section) continue;
 
-    // Lines like: "1 : Dante Virtual Soundcard (x64) [default]"
-    //         or: "1 : Realtek ASIO"
-    const m = line.match(/^(\d+)\s*:\s*(.+?)(?:\s*\[default\])?$/i);
+    // Lines like: "    1 : Dante Virtual Soundcard (x64) [default]"
+    //         or: "    1 : Realtek ASIO"
+    // Use rawLine so we only strip the leading number and colon, preserving
+    // all internal whitespace in the device name exactly as the binary reports it.
+    const m = rawLine.match(/^\s*\d+\s*:\s*(.*?)(?:\s*\[default\])?\s*$/i);
     if (m) {
-      const name = m[2].trim().replace(/\s*\[default\]$/, '');
-      if (section === 'input')  inputDevices.push(name);
-      if (section === 'output') outputDevices.push(name);
+      const name = m[1];
+      if (name && section === 'input')  inputDevices.push(name);
+      if (name && section === 'output') outputDevices.push(name);
     }
   }
 
