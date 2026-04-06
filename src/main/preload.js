@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // System info
   getHostname: () => ipcRenderer.invoke('system:getHostname'),
   getVersion: () => ipcRenderer.invoke('system:getVersion'),
+  checkBinary: () => ipcRenderer.invoke('system:checkBinary'),
 
   // Audio devices
   getAudioDevices: () => ipcRenderer.invoke('audio:getDevices'),

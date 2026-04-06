@@ -15,6 +15,7 @@ export default function App() {
   const [logs, setLogs] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(null);
+  const [binaryMissing, setBinaryMissing] = useState(false);
   const [duplexPreview, setDuplexPreview] = useState('');
 
   const logsRef = useRef([]);
@@ -22,10 +23,11 @@ export default function App() {
   // Bootstrap
   useEffect(() => {
     async function init() {
-      const [cfg, hn, ver] = await Promise.all([api.getConfig(), api.getHostname(), api.getVersion()]);
+      const [cfg, hn, ver, bin] = await Promise.all([api.getConfig(), api.getHostname(), api.getVersion(), api.checkBinary()]);
       setVersion(ver);
       setConfigState(cfg);
       setHostname(hn);
+      if (!bin.found) setBinaryMissing(true);
 
       const devs = await api.getAudioDevices();
       setAudioDevices(devs);
@@ -115,6 +117,31 @@ export default function App() {
         </div>
       </div>
 
+      {/* Binary missing warning */}
+      {binaryMissing && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '5px 16px',
+          background: 'rgba(232,64,64,0.12)',
+          borderBottom: '1px solid #E8404040',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 11, color: '#E84040', flex: 1 }}>
+            NDI Free Audio binary not found — check the path in Settings
+          </span>
+          <button
+            onClick={() => setShowSettings(true)}
+            style={{
+              background: '#E84040', border: 'none', color: '#fff',
+              fontSize: 11, fontWeight: 700, padding: '3px 12px',
+              borderRadius: 3, cursor: 'pointer',
+            }}
+          >
+            Open Settings
+          </button>
+        </div>
+      )}
+
       {/* Update notification banner */}
       {updateStatus && <UpdateBanner status={updateStatus} onDismiss={() => setUpdateStatus(null)} />}
 
@@ -166,6 +193,8 @@ export default function App() {
           config={config}
           onSave={async (updates) => {
             await updateConfig(updates);
+            const bin = await api.checkBinary();
+            setBinaryMissing(!bin.found);
             setShowSettings(false);
           }}
           onClose={() => setShowSettings(false)}

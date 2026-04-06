@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const os = require('os');
 const { autoUpdater } = require('electron-updater');
 
@@ -94,6 +95,10 @@ ipcMain.handle('config:set', (_, updates) => {
 
 ipcMain.handle('system:getHostname', () => os.hostname());
 ipcMain.handle('system:getVersion', () => app.getVersion());
+ipcMain.handle('system:checkBinary', () => {
+  const { binaryPath } = configManager.getConfig();
+  return { path: binaryPath, found: !!(binaryPath && fs.existsSync(binaryPath)) };
+});
 
 ipcMain.handle('audio:getDevices', () => {
   const config = configManager.getConfig();
