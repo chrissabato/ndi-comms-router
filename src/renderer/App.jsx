@@ -10,6 +10,7 @@ const api = window.electronAPI;
 export default function App() {
   const [config, setConfigState] = useState(null);
   const [hostname, setHostname] = useState('');
+  const [version, setVersion] = useState('');
   const [audioDevices, setAudioDevices] = useState({ channelPairs: [], systemDevices: [] });
   const [ndiSources, setNdiSources] = useState([]);
   const [processStatus, setProcessStatus] = useState({ tx: 'idle', rx: 'idle' });
@@ -23,7 +24,8 @@ export default function App() {
   // Bootstrap
   useEffect(() => {
     async function init() {
-      const [cfg, hn] = await Promise.all([api.getConfig(), api.getHostname()]);
+      const [cfg, hn, ver] = await Promise.all([api.getConfig(), api.getHostname(), api.getVersion()]);
+      setVersion(ver);
       setConfigState(cfg);
       setHostname(hn);
 
@@ -120,6 +122,7 @@ export default function App() {
         <span style={styles.titlebarTitle}>NDI COMMS ROUTER</span>
         <span style={styles.titlebarRole}>{config.machineRole === 'xr18' ? 'XR18 PC' : 'DANTE PC'}</span>
         <span style={styles.titlebarHost} className="mono">{hostname}</span>
+        {version && <span style={styles.titlebarVersion} className="mono">v{version}</span>}
         <div style={styles.titlebarActions}>
           <button style={styles.titlebarBtn} onClick={() => setShowSettings(true)} title="Settings">&#9881;</button>
           <button style={styles.titlebarBtn} onClick={() => api.windowMinimize()} title="Minimize">&#8211;</button>
@@ -311,6 +314,11 @@ const styles = {
   titlebarHost: {
     fontSize: 11,
     color: 'var(--text-secondary)',
+    marginLeft: 4,
+  },
+  titlebarVersion: {
+    fontSize: 10,
+    color: 'var(--text-dim)',
     marginLeft: 4,
   },
   titlebarActions: {

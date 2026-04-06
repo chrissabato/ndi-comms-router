@@ -76,6 +76,7 @@ ipcMain.handle('config:set', (_, updates) => {
 });
 
 ipcMain.handle('system:getHostname', () => os.hostname());
+ipcMain.handle('system:getVersion', () => app.getVersion());
 
 ipcMain.handle('audio:getDevices', () => {
   const config = configManager.getConfig();
