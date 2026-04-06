@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const DEFAULT_CONFIG = {
-  binaryPath: 'ndi-free-audio',
+  binaryPath: 'C:\\Program Files\\NDI\\NDI 6 Free Audio\\x64\\NDI FreeAudio.exe',
   autoStart: false,
   tx: {
     device: '',

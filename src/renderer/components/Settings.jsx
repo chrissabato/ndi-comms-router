@@ -4,7 +4,7 @@ const api = window.electronAPI;
 
 export default function Settings({ config, onSave, onClose }) {
   const [form, setForm] = useState({
-    binaryPath: config.binaryPath || 'ndi-free-audio',
+    binaryPath: config.binaryPath || 'C:\\Program Files\\NDI\\NDI 6 Free Audio\\x64\\NDI FreeAudio.exe',
     autoStart: config.autoStart || false,
   });
   const [saving, setSaving] = useState(false);
@@ -56,7 +56,7 @@ export default function Settings({ config, onSave, onClose }) {
               onChange={e => update('binaryPath', e.target.value)}
               style={styles.input}
               className="mono"
-              placeholder="e.g. C:\Program Files\NDI Free Audio\ndi-free-audio.exe"
+              placeholder="e.g. C:\Program Files\NDI\NDI 6 Free Audio\x64\NDI FreeAudio.exe"
             />
           </div>
 
