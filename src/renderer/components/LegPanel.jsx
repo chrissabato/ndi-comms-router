@@ -11,6 +11,8 @@ export default function LegPanel({
   ndiSources,
   status,
   onConfigChange,
+  duplexPreview,
+  bothRunning,
 }) {
   const isTx = leg === 'tx';
   const accent = isTx ? '#E8A020' : '#20B8E8';
@@ -148,15 +150,17 @@ export default function LegPanel({
             <button
               style={{
                 ...styles.startBtn,
-                background: canStart ? accent : (isRunning ? '#333' : '#222'),
-                color: canStart ? '#000' : (isRunning ? '#fff' : '#555'),
+                background: canStart ? 'var(--bg-input)' : (isRunning ? '#2a2a2a' : '#1a1a1a'),
+                color: canStart ? accent : (isRunning ? '#aaa' : '#555'),
+                border: `1px solid ${canStart ? accent : (isRunning ? '#444' : '#333')}`,
                 cursor: canStart || isRunning ? 'pointer' : 'default',
+                opacity: bothRunning ? 0.4 : 1,
               }}
               onClick={canStart ? handleStart : (isRunning ? handleStop : undefined)}
+              title={bothRunning ? 'Use STOP ALL to stop full-duplex' : undefined}
             >
-              {canStart ? `▶ START ${isTx ? 'TX' : 'RX'}` : (isRunning ? '■ STOP' : statusLabel)}
+              {canStart ? `${isTx ? 'TX' : 'RX'} only` : (isRunning ? '■ STOP' : statusLabel)}
             </button>
-
           </div>
         </div>
 
@@ -179,10 +183,12 @@ export default function LegPanel({
         </div>
       </div>
 
-      {/* CLI command preview */}
+      {/* CLI command preview — full-duplex by default, individual only when running solo */}
       <div style={styles.commandPreview}>
         <span style={styles.commandLabel}>CMD</span>
-        <span style={styles.commandText} className="mono">{commandPreview || '—'}</span>
+        <span style={styles.commandText} className="mono">
+          {(isRunning && !bothRunning) ? commandPreview : (duplexPreview || '—')}
+        </span>
       </div>
     </div>
   );
@@ -220,9 +226,9 @@ const styles = {
   slider: { width: '100%', height: 4, cursor: 'pointer', borderRadius: 2 },
   controls: { display: 'flex', gap: 6, flexWrap: 'wrap' },
   startBtn: {
-    flex: 1, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11,
-    letterSpacing: '0.06em', padding: '7px 8px', borderRadius: 4,
-    border: 'none', cursor: 'pointer', transition: 'all 0.1s', minWidth: 0,
+    fontFamily: "'Barlow', sans-serif", fontWeight: 500, fontSize: 10,
+    letterSpacing: '0.04em', padding: '4px 10px', borderRadius: 3,
+    cursor: 'pointer', transition: 'all 0.1s',
   },
   deviceWarning: {
     fontSize: 11,

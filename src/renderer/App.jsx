@@ -153,9 +153,6 @@ export default function App() {
             ■  STOP ALL
           </button>
         )}
-        {duplexPreview && (
-          <span style={styles.duplexCmd} className="mono">{duplexPreview}</span>
-        )}
       </div>
 
       {/* Main content */}
@@ -168,6 +165,8 @@ export default function App() {
             ndiSources={ndiSources}
             status={processStatus.tx}
             onConfigChange={updateConfig}
+            duplexPreview={duplexPreview}
+            bothRunning={bothRunning}
           />
           <div style={styles.legDivider} />
           <LegPanel
@@ -177,6 +176,8 @@ export default function App() {
             ndiSources={ndiSources}
             status={processStatus.rx}
             onConfigChange={updateConfig}
+            duplexPreview={duplexPreview}
+            bothRunning={bothRunning}
           />
         </div>
         <ConsoleLog logs={logs} />
@@ -339,15 +340,6 @@ const styles = {
     borderBottom: '1px solid var(--border)',
     gap: 8,
     flexShrink: 0,
-    flexWrap: 'wrap',
-  },
-  duplexCmd: {
-    fontSize: 10,
-    color: '#444',
-    flex: '1 1 100%',
-    lineHeight: 1.4,
-    wordBreak: 'break-all',
-    paddingTop: 2,
   },
   masterBtn: {
     fontFamily: "'Barlow', sans-serif",
