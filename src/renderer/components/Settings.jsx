@@ -6,7 +6,6 @@ export default function Settings({ config, onSave, onClose }) {
   const [form, setForm] = useState({
     binaryPath: config.binaryPath || 'ndi-free-audio',
     autoStart: config.autoStart || false,
-    networkInterface: config.networkInterface || 'auto',
   });
   const [saving, setSaving] = useState(false);
   const [updateState, setUpdateState] = useState(null); // null | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'ready' | 'error'
@@ -58,20 +57,6 @@ export default function Settings({ config, onSave, onClose }) {
               style={styles.input}
               className="mono"
               placeholder="e.g. C:\Program Files\NDI Free Audio\ndi-free-audio.exe"
-            />
-          </div>
-
-          {/* Network interface */}
-          <div style={styles.field}>
-            <label style={styles.label}>Network Interface</label>
-            <p style={styles.hint}>For multi-NIC machines — restrict NDI to a specific interface</p>
-            <input
-              type="text"
-              value={form.networkInterface}
-              onChange={e => update('networkInterface', e.target.value)}
-              style={styles.input}
-              className="mono"
-              placeholder="auto"
             />
           </div>
 

@@ -5,7 +5,6 @@ const fs = require('fs');
 const DEFAULT_CONFIG = {
   binaryPath: 'ndi-free-audio',
   autoStart: false,
-  networkInterface: 'auto',
   tx: {
     device: '',
     streamName: 'Comms TX',
