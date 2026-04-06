@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopAll: () => ipcRenderer.invoke('process:stopAll'),
   getProcessStatus: () => ipcRenderer.invoke('process:getStatus'),
   buildCommandPreview: (leg, params) => ipcRenderer.invoke('process:buildCommandPreview', leg, params),
+  buildBothCommandPreview: (txParams, rxParams) => ipcRenderer.invoke('process:buildBothCommandPreview', txParams, rxParams),
 
   // Event subscriptions (all return unsubscribe functions)
   onLog: (cb) => on('log', cb),

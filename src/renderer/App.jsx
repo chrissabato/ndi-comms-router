@@ -15,7 +15,8 @@ export default function App() {
   const [processStatus, setProcessStatus] = useState({ tx: 'idle', rx: 'idle' });
   const [logs, setLogs] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState(null); // null | { status, version?, percent?, message? }
+  const [updateStatus, setUpdateStatus] = useState(null);
+  const [duplexPreview, setDuplexPreview] = useState('');
 
   const logsRef = useRef([]);
 
@@ -84,11 +85,18 @@ export default function App() {
     return cfg;
   }, []);
 
+  // Rebuild full-duplex command preview when config changes
+  useEffect(() => {
+    if (!config) return;
+    api.buildBothCommandPreview(buildTxParams(config), buildRxParams(config))
+      .then(setDuplexPreview).catch(() => {});
+  }, [config]);
+
   const handleStartBoth = useCallback(async () => {
     const txParams = buildTxParams(config);
     const rxParams = buildRxParams(config);
     await api.startBoth(txParams, rxParams);
-  }, [config, hostname]);
+  }, [config]);
 
   const handleStopAll = useCallback(async () => {
     await api.stopAll();
@@ -144,6 +152,9 @@ export default function App() {
           <button style={{ ...styles.masterBtn, ...styles.masterBtnStop, marginLeft: 8 }} onClick={handleStopAll}>
             ■  STOP ALL
           </button>
+        )}
+        {duplexPreview && (
+          <span style={styles.duplexCmd} className="mono">{duplexPreview}</span>
         )}
       </div>
 
@@ -246,7 +257,7 @@ function toChannelPairs(deviceNames) {
 
 function buildTxParams(config) {
   return {
-    streamName: 'Comms TX',
+    streamName: config.tx?.streamName || 'Comms TX',
     device: config.tx?.device || '',
     gain: config.tx?.gain ?? 0,
   };
@@ -328,6 +339,15 @@ const styles = {
     borderBottom: '1px solid var(--border)',
     gap: 8,
     flexShrink: 0,
+    flexWrap: 'wrap',
+  },
+  duplexCmd: {
+    fontSize: 10,
+    color: '#444',
+    flex: '1 1 100%',
+    lineHeight: 1.4,
+    wordBreak: 'break-all',
+    paddingTop: 2,
   },
   masterBtn: {
     fontFamily: "'Barlow', sans-serif",

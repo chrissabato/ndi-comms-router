@@ -109,6 +109,10 @@ ipcMain.handle('process:buildCommandPreview', (_, leg, params) =>
   processManager.buildCommandPreview(leg, params)
 );
 
+ipcMain.handle('process:buildBothCommandPreview', (_, txParams, rxParams) =>
+  processManager.buildBothCommandPreview(txParams, rxParams)
+);
+
 ipcMain.handle('updater:installNow', () => {
   autoUpdater.quitAndInstall();
 });

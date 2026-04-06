@@ -9,6 +9,7 @@ const DEFAULT_CONFIG = {
   networkInterface: 'auto',
   tx: {
     device: '',
+    streamName: 'Comms TX',
     gain: 0,
     latency: 12,
     muted: false,

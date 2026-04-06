@@ -21,15 +21,19 @@ export default function LegPanel({
   // Rebuild CLI preview when params change
   useEffect(() => {
     const params = isTx
-      ? { streamName: 'Comms TX', device: legConfig.device || '', gain: legConfig.gain ?? 0 }
+      ? { streamName: legConfig.streamName || 'Comms TX', device: legConfig.device || '', gain: legConfig.gain ?? 0 }
       : { source: legConfig.source || '', device: legConfig.device || '', gain: legConfig.gain ?? 0 };
     api.buildCommandPreview(leg, params).then(setCommandPreview).catch(() => {});
-  }, [leg, legConfig.device, legConfig.gain, legConfig.source, isTx]);
+  }, [leg, legConfig.device, legConfig.gain, legConfig.source, legConfig.streamName, isTx]);
+
+  async function handleStreamNameChange(value) {
+    await onConfigChange({ tx: { streamName: value } });
+  }
 
   async function handleStart() {
     const params = isTx
       ? {
-          streamName: 'Comms TX',
+          streamName: legConfig.streamName || 'Comms TX',
           device: legConfig.device || '',
           gain: legConfig.gain ?? 0,
         }
@@ -97,9 +101,15 @@ export default function LegPanel({
           {isTx ? (
             <div style={styles.streamName}>
               <label style={styles.fieldLabel}>NDI STREAM NAME</label>
-              <div style={styles.streamNameValue} className="mono">
-                Comms TX
-              </div>
+              <input
+                type="text"
+                value={legConfig.streamName ?? 'Comms TX'}
+                onChange={e => handleStreamNameChange(e.target.value)}
+                disabled={isRunning || isWaiting}
+                style={{ ...styles.streamNameValue, cursor: (isRunning || isWaiting) ? 'not-allowed' : 'text', opacity: (isRunning || isWaiting) ? 0.5 : 1 }}
+                className="mono"
+                spellCheck={false}
+              />
             </div>
           ) : (
             <div style={styles.field}>
@@ -196,9 +206,9 @@ const styles = {
   rightCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
   streamName: { display: 'flex', flexDirection: 'column', gap: 4 },
   streamNameValue: {
-    fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-input)',
+    fontSize: 11, color: 'var(--text-primary)', background: 'var(--bg-input)',
     border: '1px solid var(--border)', borderRadius: 3, padding: '5px 8px',
-    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    width: '100%', outline: 'none',
   },
   field: { display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0 },
   fieldRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },

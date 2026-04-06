@@ -54,6 +54,12 @@ class ProcessManager extends EventEmitter {
     return `${bin} ${args.map(a => a.startsWith('-') ? a : `"${a}"`).join(' ')}`;
   }
 
+  buildBothCommandPreview(txParams, rxParams) {
+    const args = [...this._buildArgs('tx', txParams || {}), ...this._buildArgs('rx', rxParams || {})];
+    const bin = `"${this._binaryPath}"`;
+    return `${bin} ${args.map(a => a.startsWith('-') ? a : `"${a}"`).join(' ')}`;
+  }
+
   startLeg(leg, params) {
     if (this._processes[leg]) this.stopLeg(leg);
     this._params[leg] = params;
@@ -187,13 +193,13 @@ class ProcessManager extends EventEmitter {
 
     const bin = `"${this._binaryPath}"`;
     const preview = `${bin} ${args.map(a => a.startsWith('-') ? a : `"${a}"`).join(' ')}`;
-    this._emitLog('tx', `Full-duplex started: ${preview}`);
+    this._emitLog('sys', `Full-duplex started: ${preview}`);
 
     proc.stdout.on('data', (data) => {
       for (const line of data.toString().split('\n')) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        this._emitLog('tx', trimmed);
+        this._emitLog('sys', trimmed);
       }
     });
 
@@ -201,7 +207,7 @@ class ProcessManager extends EventEmitter {
       for (const line of data.toString().split('\n')) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        this._emitLog('tx', trimmed, 'error');
+        this._emitLog('sys', trimmed, 'error');
       }
     });
 
