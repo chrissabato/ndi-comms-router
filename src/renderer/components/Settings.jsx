@@ -5,7 +5,6 @@ const api = window.electronAPI;
 export default function Settings({ config, onSave, onClose }) {
   const [form, setForm] = useState({
     binaryPath: config.binaryPath || 'ndi-free-audio',
-    machineRole: config.machineRole || 'xr18',
     autoStart: config.autoStart || false,
     networkInterface: config.networkInterface || 'auto',
   });
@@ -60,26 +59,6 @@ export default function Settings({ config, onSave, onClose }) {
               className="mono"
               placeholder="e.g. C:\Program Files\NDI Free Audio\ndi-free-audio.exe"
             />
-          </div>
-
-          {/* Machine role */}
-          <div style={styles.field}>
-            <label style={styles.label}>Machine Role</label>
-            <p style={styles.hint}>Changes device enumeration and channel grid layout</p>
-            <div style={styles.roleRow}>
-              <RoleOption
-                value="xr18"
-                selected={form.machineRole === 'xr18'}
-                label="XR18 PC"
-                onSelect={() => update('machineRole', 'xr18')}
-              />
-              <RoleOption
-                value="dante"
-                selected={form.machineRole === 'dante'}
-                label="DANTE PC"
-                onSelect={() => update('machineRole', 'dante')}
-              />
-            </div>
           </div>
 
           {/* Network interface */}
@@ -150,23 +129,6 @@ export default function Settings({ config, onSave, onClose }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function RoleOption({ value, selected, label, onSelect }) {
-  return (
-    <button
-      style={{
-        ...styles.roleBtn,
-        borderColor: selected ? '#E8A020' : 'var(--border)',
-        background: selected ? 'rgba(232,160,32,0.12)' : 'var(--bg-input)',
-        color: selected ? '#E8A020' : 'var(--text-secondary)',
-        fontWeight: selected ? 600 : 400,
-      }}
-      onClick={onSelect}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -246,22 +208,6 @@ const styles = {
     fontSize: 12,
     outline: 'none',
     width: '100%',
-  },
-  roleRow: {
-    display: 'flex',
-    gap: 8,
-    marginTop: 4,
-  },
-  roleBtn: {
-    flex: 1,
-    fontFamily: "'Barlow', sans-serif",
-    fontSize: 13,
-    padding: '8px 16px',
-    borderRadius: 4,
-    border: '1px solid',
-    cursor: 'pointer',
-    transition: 'all 0.1s',
-    letterSpacing: '0.04em',
   },
   checkLabel: {
     display: 'flex',

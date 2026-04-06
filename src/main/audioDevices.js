@@ -50,7 +50,7 @@ function enumerateDevices(binaryPath) {
   }
 }
 
-function getAudioDevices(machineRole, binaryPath) {
+function getAudioDevices(binaryPath) {
   const { inputDevices, outputDevices } = enumerateDevices(binaryPath);
 
   // All devices usable for TX input or RX output — combine unique names

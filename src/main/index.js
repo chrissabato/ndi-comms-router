@@ -80,7 +80,7 @@ ipcMain.handle('system:getVersion', () => app.getVersion());
 
 ipcMain.handle('audio:getDevices', () => {
   const config = configManager.getConfig();
-  return audioDevices.getAudioDevices(config.machineRole, config.binaryPath);
+  return audioDevices.getAudioDevices(config.binaryPath);
 });
 
 ipcMain.handle('ndi:getSources', () => ndiScanner.getSources());

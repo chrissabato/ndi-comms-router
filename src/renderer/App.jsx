@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import MachineSelector from './components/MachineSelector';
 import LegPanel from './components/LegPanel';
 import ConsoleLog from './components/ConsoleLog';
 import Settings from './components/Settings';
-import SignalFlow from './components/SignalFlow';
 
 const api = window.electronAPI;
 
@@ -29,10 +27,8 @@ export default function App() {
       setConfigState(cfg);
       setHostname(hn);
 
-      if (cfg.machineRole) {
-        const devs = await api.getAudioDevices();
-        setAudioDevices(devs);
-      }
+      const devs = await api.getAudioDevices();
+      setAudioDevices(devs);
 
       const sources = await api.getNdiSources();
       setNdiSources(sources);
@@ -74,13 +70,6 @@ export default function App() {
     };
   }, []);
 
-  const handleRoleSelect = useCallback(async (role) => {
-    const cfg = await api.setConfig({ machineRole: role });
-    setConfigState(cfg);
-    const devs = await api.getAudioDevices();
-    setAudioDevices(devs);
-  }, []);
-
   const updateConfig = useCallback(async (updates) => {
     const cfg = await api.setConfig(updates);
     setConfigState(cfg);
@@ -108,10 +97,6 @@ export default function App() {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#555' }}>Initialising...</div>;
   }
 
-  if (!config.machineRole) {
-    return <MachineSelector onSelect={handleRoleSelect} />;
-  }
-
   const bothRunning = processStatus.tx === 'running' && processStatus.rx === 'running';
   const anyRunning = processStatus.tx !== 'idle' || processStatus.rx !== 'idle';
 
@@ -120,7 +105,6 @@ export default function App() {
       {/* Titlebar */}
       <div className="titlebar" style={styles.titlebar}>
         <span style={styles.titlebarTitle}>NDI COMMS ROUTER</span>
-        <span style={styles.titlebarRole}>{config.machineRole === 'xr18' ? 'XR18 PC' : 'DANTE PC'}</span>
         <span style={styles.titlebarHost} className="mono">{hostname}</span>
         {version && <span style={styles.titlebarVersion} className="mono">v{version}</span>}
         <div style={styles.titlebarActions}>
@@ -133,15 +117,6 @@ export default function App() {
 
       {/* Update notification banner */}
       {updateStatus && <UpdateBanner status={updateStatus} onDismiss={() => setUpdateStatus(null)} />}
-
-      {/* Signal flow diagram */}
-      <SignalFlow
-        machineRole={config.machineRole}
-        txStatus={processStatus.tx}
-        rxStatus={processStatus.rx}
-        hostname={hostname}
-        remoteSource={config.rx?.source}
-      />
 
       {/* Master controls */}
       <div style={styles.masterControls}>
@@ -192,11 +167,6 @@ export default function App() {
           onSave={async (updates) => {
             await updateConfig(updates);
             setShowSettings(false);
-            // Reload audio devices if role changed
-            if (updates.machineRole && updates.machineRole !== config.machineRole) {
-              const devs = await api.getAudioDevices();
-              setAudioDevices(devs);
-            }
           }}
           onClose={() => setShowSettings(false)}
         />
@@ -301,15 +271,6 @@ const styles = {
     fontSize: 12,
     letterSpacing: '0.1em',
     color: 'var(--text-primary)',
-  },
-  titlebarRole: {
-    fontSize: 11,
-    fontWeight: 600,
-    color: 'var(--tx)',
-    background: 'rgba(232,160,32,0.12)',
-    padding: '2px 8px',
-    borderRadius: 3,
-    letterSpacing: '0.05em',
   },
   titlebarHost: {
     fontSize: 11,

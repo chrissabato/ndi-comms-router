@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 
 const DEFAULT_CONFIG = {
-  machineRole: null,
   binaryPath: 'ndi-free-audio',
   autoStart: false,
   networkInterface: 'auto',
