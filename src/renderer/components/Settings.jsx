@@ -8,7 +8,6 @@ export default function Settings({ config, onSave, onClose }) {
     machineRole: config.machineRole || 'xr18',
     autoStart: config.autoStart || false,
     networkInterface: config.networkInterface || 'auto',
-    discoveryServer: config.discoveryServer || '',
   });
   const [saving, setSaving] = useState(false);
   const [updateState, setUpdateState] = useState(null); // null | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'ready' | 'error'
@@ -94,20 +93,6 @@ export default function Settings({ config, onSave, onClose }) {
               style={styles.input}
               className="mono"
               placeholder="auto"
-            />
-          </div>
-
-          {/* NDI Discovery Server */}
-          <div style={styles.field}>
-            <label style={styles.label}>NDI Discovery Server</label>
-            <p style={styles.hint}>IP address of an NDI discovery server (optional — leave blank for mDNS/broadcast discovery)</p>
-            <input
-              type="text"
-              value={form.discoveryServer}
-              onChange={e => update('discoveryServer', e.target.value)}
-              style={styles.input}
-              className="mono"
-              placeholder="e.g. 192.168.1.100"
             />
           </div>
 

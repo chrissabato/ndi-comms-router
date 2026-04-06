@@ -36,41 +36,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Patch grandiose for NDI 6 SDK and stable-source discovery
-        shell: powershell
-        run: |
-          # NDI 6 SDK renamed p_ndi_name to p_ndi_recv_name in recv create struct
-          $recv = "node_modules\grandiose\src\grandiose_receive.cc"
-          (Get-Content $recv) -replace 'receiveConfig\.p_ndi_name = c->name;', 'receiveConfig.p_ndi_recv_name = c->name;' | Set-Content $recv
-
-          # grandiose rejects the promise when NDIlib_find_wait_for_sources returns false
-          # (no source changes), even if sources exist. Fix: only reject when no sources found.
-          $find = "node_modules\grandiose\src\grandiose_find.cc"
-          (Get-Content $find) -replace 'if \(!findStatus\) \{', 'if (!findStatus && c->no_sources == 0) {' | Set-Content $find
-
-      - name: Stage NDI SDK files for grandiose
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Force -Path "node_modules\grandiose\include"
-          New-Item -ItemType Directory -Force -Path "node_modules\grandiose\lib\win_x64"
-          Copy-Item -Path "ndi-sdk\Include\*" -Destination "node_modules\grandiose\include\" -Force
-          Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.lib" -Destination "node_modules\grandiose\lib\win_x64\" -Force
-          Copy-Item -Path "ndi-sdk\Lib\x64\Processing.NDI.Lib.x64.dll" -Destination "node_modules\grandiose\lib\win_x64\" -Force
-
-      - name: Install Python setuptools (required by node-gyp on Python 3.12+)
-        run: pip install setuptools
-
-      - name: Rebuild native modules for Electron
-        run: npx @electron/rebuild --parallel --force --types prod,optional
-
-      - name: Verify grandiose compiled
-        shell: powershell
-        run: |
-          $node = "node_modules\grandiose\build\Release\grandiose.node"
-          $dll  = "node_modules\grandiose\build\Release\Processing.NDI.Lib.x64.dll"
-          if (Test-Path $node) { Write-Host "OK: $node" } else { Write-Error "MISSING: $node" }
-          if (Test-Path $dll)  { Write-Host "OK: $dll"  } else { Write-Error "MISSING: $dll"  }
-
       - name: Set version from tag
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
@@ -81,7 +46,6 @@ jobs:
 
       - name: Package (Windows installer)
         run: npx electron-builder --publish never
-        # electron-builder uses the already-built dist/ output from the previous step
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

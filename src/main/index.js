@@ -56,7 +56,6 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    ndiScanner.start();
   });
 
   mainWindow.on('closed', () => {
@@ -70,13 +69,8 @@ ipcMain.handle('config:get', () => configManager.getConfig());
 
 ipcMain.handle('config:set', (_, updates) => {
   const config = configManager.setConfig(updates);
-  // Apply binary path to sub-systems if it changed
   if (updates.binaryPath) {
-    ndiScanner.setBinaryPath(updates.binaryPath);
     processManager.setBinaryPath(updates.binaryPath);
-  }
-  if ('discoveryServer' in updates) {
-    ndiScanner.setDiscoveryServer(updates.discoveryServer);
   }
   return config;
 });
@@ -162,13 +156,8 @@ ndiScanner.on('log', (data) => {
 app.whenReady().then(() => {
   const config = configManager.loadConfig();
 
-  // Apply saved binary path
   if (config.binaryPath) {
-    ndiScanner.setBinaryPath(config.binaryPath);
     processManager.setBinaryPath(config.binaryPath);
-  }
-  if (config.discoveryServer) {
-    ndiScanner.setDiscoveryServer(config.discoveryServer);
   }
 
   createWindow();
@@ -185,13 +174,11 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   processManager.cleanup();
-  ndiScanner.stop();
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
   processManager.cleanup();
-  ndiScanner.stop();
 });
 
 // Handle SIGTERM cleanly

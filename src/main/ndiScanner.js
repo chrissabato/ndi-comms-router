@@ -1,110 +1,35 @@
 const { EventEmitter } = require('events');
 
-// grandiose.find(options, waitMs) is async — returns a Promise that resolves
-// with an array of { name, urlAddress } objects. The wait happens in a worker
-// thread so it never blocks the main thread.
-const POLL_INTERVAL_MS = 5000;
-const FIND_WAIT_MS = 500; // worker waits up to 2x this per NDI SDK call
-
-let grandiose = null;
-try {
-  grandiose = require('grandiose');
-} catch (_) {
-  // grandiose not available — manual entry only
-}
-
+// Manual source registry only — NDI discovery removed.
+// ndi-free-audio handles waiting for sources internally; the source name
+// just needs to be configured once and saved in config.
 class NdiScanner extends EventEmitter {
   constructor() {
     super();
-    this._discoveryServer = '';
-    this._discoveredSources = [];
-    this._manualSources = [];
-    this._timer = null;
-    this._running = false;
-    this._polling = false;
+    this._sources = [];
   }
 
-  // binaryPath no longer needed (grandiose uses NDI SDK directly)
-  // kept as no-op so callers don't need to change
+  // No-ops retained so callers don't need to change
   setBinaryPath() {}
+  setDiscoveryServer() {}
+  start() {}
+  stop() {}
 
-  setDiscoveryServer(ip) {
-    this._discoveryServer = (ip || '').trim();
-  }
-
-  start() {
-    if (this._running) return;
-    this._running = true;
-    if (!grandiose) {
-      this._log('grandiose not available — add NDI sources manually in the RX panel.', 'info');
-    } else {
-      this._log(
-        'NDI source discovery started' +
-        (this._discoveryServer ? ` (discovery server: ${this._discoveryServer})` : '')
-      );
-      this._doPoll();
-    }
-    this._timer = setInterval(() => this._doPoll(), POLL_INTERVAL_MS);
-  }
-
-  stop() {
-    this._running = false;
-    if (this._timer) { clearInterval(this._timer); this._timer = null; }
-  }
-
-  getSources() {
-    const seen = new Set();
-    return [...this._discoveredSources, ...this._manualSources]
-      .filter(s => !seen.has(s.name) && seen.add(s.name));
-  }
+  getSources() { return this._sources; }
 
   addManualSource(name) {
-    if (!this._manualSources.find(s => s.name === name)) {
-      this._manualSources = [...this._manualSources, { name, manual: true }];
-      this.emit('sources', this.getSources());
+    if (!this._sources.find(s => s.name === name)) {
+      this._sources = [...this._sources, { name, manual: true }];
+      this.emit('sources', this._sources);
     }
   }
 
   removeManualSource(name) {
-    const before = this._manualSources.length;
-    this._manualSources = this._manualSources.filter(s => s.name !== name);
-    if (this._manualSources.length !== before) {
-      this.emit('sources', this.getSources());
+    const updated = this._sources.filter(s => s.name !== name);
+    if (updated.length !== this._sources.length) {
+      this._sources = updated;
+      this.emit('sources', this._sources);
     }
-  }
-
-  async _doPoll() {
-    if (!grandiose || this._polling) return;
-    this._polling = true;
-    try {
-      const opts = {};
-      if (this._discoveryServer) opts.extraIPs = this._discoveryServer;
-      const raw = await grandiose.find(opts, FIND_WAIT_MS);
-      const seen = new Set();
-      const parsed = raw
-        .filter(s => s.name && !seen.has(s.name) && seen.add(s.name))
-        .map(s => ({ name: s.name, urlAddress: s.urlAddress || null, manual: false }));
-
-      const prevNames = this._discoveredSources.map(s => s.name).sort().join('\n');
-      const nextNames = parsed.map(s => s.name).sort().join('\n');
-      if (prevNames !== nextNames) {
-        this._discoveredSources = parsed;
-        this._log(`Sources updated (${parsed.length}): ${parsed.map(s => s.name).join(', ') || 'none'}`);
-        this.emit('sources', this.getSources());
-      }
-    } catch (err) {
-      if (err.message && err.message.includes('Did not find')) {
-        // Normal: no source changes in the wait window — existing sources remain valid
-      } else {
-        this._log(`NDI discovery error: ${err.message}`, 'warn');
-      }
-    } finally {
-      this._polling = false;
-    }
-  }
-
-  _log(message, level = 'info') {
-    this.emit('log', { leg: 'sys', message: `[NDI Scanner] ${message}`, level, timestamp: Date.now() });
   }
 }
 
