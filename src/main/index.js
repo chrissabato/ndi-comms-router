@@ -56,6 +56,23 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+
+    const config = configManager.getConfig();
+    if (config.autoStart) {
+      const txParams = {
+        streamName: config.tx?.streamName || 'Comms TX',
+        device: config.tx?.device || '',
+        gain: config.tx?.gain ?? 0,
+      };
+      const rxParams = {
+        source: config.rx?.source || '',
+        device: config.rx?.device || '',
+        gain: config.rx?.gain ?? 0,
+        waitForSource: true,
+        autoReconnect: true,
+      };
+      processManager.startBoth(txParams, rxParams);
+    }
   });
 
   mainWindow.on('closed', () => {

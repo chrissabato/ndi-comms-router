@@ -69,9 +69,9 @@ export default function Settings({ config, onSave, onClose }) {
                 onChange={e => update('autoStart', e.target.checked)}
                 style={{ marginRight: 8 }}
               />
-              Auto-start both legs on launch
+              Auto-start full-duplex on launch
             </label>
-            <p style={styles.hint}>Starts TX and RX immediately when the app opens, using saved device settings</p>
+            <p style={styles.hint}>Starts full-duplex immediately when the app opens, using saved device settings</p>
           </div>
 
           {/* Updates */}
